@@ -36,8 +36,11 @@ Retrieves current wallet balance: total and unlocked.
 None.
 ### Outputs:
 balance — unsigned integer; total amount of funds the wallet has (unlocked and locked coins).
+
 unlocked_balance — unsigned integer; unlocked funds, i.e. coins that are stored deep enough in the blockchain to be considered relatively safe to spend. Only this amount of coins are immediately spendable.
+
 unlocked_balance is always less or equal to balance.
+
 ### Examples
 `$ curl http://127.0.0.1:12233/json_rpc -s -H 'content-type:application/json;' --data-binary '{"jsonrpc":"2.0","id":"0","method":"getbalance"}'`
 
@@ -82,6 +85,7 @@ comment — string; text commentary which follow the transaction in encrypted fo
 
 transfer_destination object fields:
 address — string; standard or integrated address of a recipient.
+
 amount — unsigned int; amount of coins to be sent;
 
 ### Outputs:
@@ -147,6 +151,7 @@ $ curl http://127.0.0.1:12233/json_rpc -s -H 'content-type:application/json;' --
 Gets list of incoming transfers by a given payment id.
 ### Inputs:
 payment_id — string; hex-encoded payment id.
+
 allow_locked_transactions — boolean; when requesting transactions from wallets, this parameter is used as a transaction filter, in which the unlock_time parameter is set to a value other than the safe values used by default. By default, this option is turned off, but if you need to - you can enable it and see all transactions (at your own risk).
 
 ### Outputs:
@@ -154,9 +159,13 @@ result — list of payments object.
 
 payments object fields:
 amount — unsigned int; amount of coins in atomic units.
+
 block_height — unsigned int; height of the block containing corresponding transaction.
+
 tx_hash — string; transaction hash.
+
 unlock_time — unsigned int; if non-zero — unix timestamp after which this transfer coins can be spent. If it is less than 500000000, the value is treated as a minimum block height at which this transfer coin can be spent.
+
 ### Examples
 `
 $ curl http://127.0.0.1:12233/json_rpc -s -H 'content-type:application/json;' --data-binary '{"jsonrpc":"2.0","id":"5","method":"get_payments", "params":{"payment_id":"aaaa"}'
@@ -180,7 +189,9 @@ $ curl http://127.0.0.1:12233/json_rpc -s -H 'content-type:application/json;' --
 Gets list of incoming transfers by given payment IDs.
 ### Inputs:
 payment_ids — array of strings; hex-encoded payment IDs.
+
 min_block_height — integer; minimum block height.
+
 allow_locked_transactions — boolean; when requesting transactions from wallets, this parameter is used as a transaction filter, in which the unlock_time parameter is set to a value other than the safe values used by default. By default, this option is turned off, but if you need to - you can enable it and see all transactions (at your own risk).
 
 ### Outputs:
@@ -210,7 +221,9 @@ Creates an integrated address for the wallet by embedding the given payment ID t
 payment_id — string; hex-encoded payment identifier. If empty, random 8-byte payment ID will be generated and used.
 ### Outputs:
 integrated_address — string; the result.
+
 payment_id — string; hex-encoded payment ID, that was used (useful if an empty payment_id was given as an input).
+
 ### Examples
 #### Empty payment ID
 `
@@ -256,7 +269,9 @@ $ curl http://127.0.0.1:12233/json_rpc -s -H 'content-type:application/json;' --
 integrated_address — string; integrated or standard address.
 ### Outputs:
 standard_address — string; standard address with no payment ID attached
+
 payment_id — string; hex-encoded payment ID, extracted from the given integrated address. Can be empty. Will be empty when a standard address is given as an input.
+
 ### Examples
 #### Invalid integrated address
 `
@@ -302,6 +317,7 @@ $ curl http://127.0.0.1:12233/json_rpc -s -H 'content-type:application/json;' --
 
 ## sign_transfer
 Signs a transaction prepared by watch-only wallet (for cold-signing process).
+
 NOTE: this method requires spending private key and can't be served by watch-only wallets.
 
 ### Inputs:
@@ -309,6 +325,7 @@ tx_unsigned_hex — string; hex-encoded unsigned transaction as returned from tr
 
 ### Outputs:
 tx_hash — string; hash identifier of signed transaction.
+
 tx_signed_hex — string; hex-encoded signed transaction.
 
 ### Example
