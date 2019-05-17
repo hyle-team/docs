@@ -72,8 +72,11 @@ Creates a transaction and broadcasts it to the network.
 ### Inputs:
 destinations — list of transfer_destination objects (see below); list of recipients with corresponding amount of coins for each.
 fee — unsigned int; transaction fee in atomic units. Minimum 105 atomic units, recommended 106 or 107.
+
 mixin — unsigned int; number of foreign outputs to be mixed in with each input. Increases untraceability. Use 0 for direct and traceable transfers.
+
 payment_id — string; hex-encoded payment id. Can be empty if payment id is not required for this transfer.
+
 comment — string; text commentary which follow the transaction in encrypted form and is visible only to the sender and the receiver.
 
 transfer_destination object fields:
