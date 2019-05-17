@@ -74,6 +74,7 @@ destinations — list of transfer_destination objects (see below); list of recip
 fee — unsigned int; transaction fee in atomic units. Minimum 105 atomic units, recommended 106 or 107.
 mixin — unsigned int; number of foreign outputs to be mixed in with each input. Increases untraceability. Use 0 for direct and traceable transfers.
 payment_id — string; hex-encoded payment id. Can be empty if payment id is not required for this transfer.
+comment — string; text commentary which follow the transaction in encrypted form and is visible only to the sender and the receiver.
 
 transfer_destination object fields:
 address — string; standard or integrated address of a recipient.
@@ -142,6 +143,8 @@ $ curl http://127.0.0.1:12233/json_rpc -s -H 'content-type:application/json;' --
 Gets list of incoming transfers by a given payment id.
 ### Inputs:
 payment_id — string; hex-encoded payment id.
+allow_locked_transactions — boolean; when requesting transactions from wallets, this parameter is used as a transaction filter, in which the unlock_time parameter is set to a value other than the safe values used by default. By default, this option is turned off, but if you need to - you can enable it and see all transactions (at your own risk).
+
 ### Outputs:
 result — list of payments object.
 
@@ -174,6 +177,7 @@ Gets list of incoming transfers by given payment IDs.
 ### Inputs:
 payment_ids — array of strings; hex-encoded payment IDs.
 min_block_height — integer; minimum block height.
+allow_locked_transactions — boolean; when requesting transactions from wallets, this parameter is used as a transaction filter, in which the unlock_time parameter is set to a value other than the safe values used by default. By default, this option is turned off, but if you need to - you can enable it and see all transactions (at your own risk).
 
 ### Outputs:
 payments — list of payment_details object (see get_payments for details).
