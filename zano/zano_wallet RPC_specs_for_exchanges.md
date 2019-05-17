@@ -71,6 +71,7 @@ address — string; standard public address of the wallet.
 Creates a transaction and broadcasts it to the network.
 ### Inputs:
 destinations — list of transfer_destination objects (see below); list of recipients with corresponding amount of coins for each.
+
 fee — unsigned int; transaction fee in atomic units. Minimum 105 atomic units, recommended 106 or 107.
 
 mixin — unsigned int; number of foreign outputs to be mixed in with each input. Increases untraceability. Use 0 for direct and traceable transfers.
