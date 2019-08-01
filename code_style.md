@@ -18,8 +18,8 @@ Basis for our code-style is a book **“C++ Coding Standards” by Herb Sutter a
 
 ### Safety:
  - Type-safety is a mandatory, using of C-style typecast only in extremal cases.
- - NEVER use type-unsafe “format/printf”-like functions with var arguments list (not related to modern type-safe C++ version of this functions).
- - ALWAYS initialize every variable/object. Stack and member variables. We normally use AUTO_VAL_INIT() for that.
+ - **NEVER** use type-unsafe “format/printf”-like functions with var arguments list (not related to modern type-safe C++ version of this functions).
+ - **ALWAYS** initialize every variable/object. Stack and member variables. We normally use AUTO_VAL_INIT() for that.
  - Critical sections should be used with CRITICAL_REGION_/CRITICAL_SECTION_*** macros (due to anti-deadlock manager).
 After any code change you need to check that core_tests and unit_tests are all passed OK.
 
