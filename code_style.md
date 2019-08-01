@@ -9,6 +9,13 @@ Basis for our code-style is a book **“C++ Coding Standards” by Herb Sutter a
  - Put opening curly brace to a separate line.
  - If you faced with an old code that doesn’t meet these rules and you need to fix smth: keep it’s formatting intact!
 
+### Git:
+ - All pull reqests must be done to **develop** branch
+ - Commits should have short and laconic explanation of code changes.
+ - Before making any pull requests please make sure that ALL coretests and unit tests are passing
+ - Avoid massive changes in one commit, one feature/fix - one commit. 
+
+
 ### Safety:
  - Type-safety is a mandatory, using of C-style typecast only in extremal cases.
  - NEVER use type-unsafe “format/printf”-like functions with var arguments list (not related to modern type-safe C++ version of this functions).
