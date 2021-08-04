@@ -1,0 +1,451 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{indentfirst}
+\usepackage{authblk}
+\usepackage{graphicx}
+\usepackage{hyperref}
+
+%\usepackage[square,numbers]{natbib}
+%\usepackage[square,sort,comma,numbers]{natbib}
+\usepackage[style=numeric]{biblatex}
+\addbibresource{references.bib}
+\usepackage[dvipsnames]{xcolor}
+
+\usepackage{amsmath}
+\usepackage{amsthm} % proof environment
+%\usepackage[thref,leref]{ntheorem}
+\usepackage{amsfonts}
+
+\usepackage{caption}
+\usepackage[shortlabels]{enumitem}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{soul} % highlighting
+
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=blue,
+  urlcolor=blue,
+  citecolor=OliveGreen
+}
+\urlstyle{same}
+
+\setlength{\parindent}{2em}
+\setlength{\parskip}{1ex}
+
+ \captionsetup[figure]{labelfont={bf},name={Fig.},labelsep=period}
+ 
+ \numberwithin{figure}{section}
+
+\title{\huge{\textbf{A Proof-of-Stake scheme for confidential transactions with hidden amounts}}}
+\author{\large{sowle}}
+\affil{\small{Zano project \\ \texttt{val@zano.org} \\ \url{https://zano.org}}}
+\date{\small{July 2021}}
+
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+This article explores a way of implementing Proof-of-Stake mining algorithm in an environment where amounts are hidden with homomorphic commitments.
+
+We propose an algorithm which is compatible with such transactions, including transactions with mixed-in decoys.
+\end{abstract}
+
+\section{Notation}
+Let $\mathbb{G}$ denotes main subgroup of Ed25519 curve (\cite{ed25519_site}) and $\mathbb{Z}_p$ denotes ring of integers modulo $p$.
+
+$l$ is the order of $\mathbb{G}$: $\#\mathbb{G} = l = 2^{252} + 27742317777372353535851937790883648493$.
+
+For  any  set $X$, $x \stackrel{\$}{\leftarrow} X$ means uniform  sampling of $x$ at random from $X$. 
+
+
+
+\section{PoS scheme using open amounts} \label{sec_open_amounts}
+
+\begin{figure}[ht!]
+\centering
+\includegraphics[scale=0.665]{fig_1.png}
+\caption{Scheme of the original PoS mining process, as originally implemented in Zano}
+\label{fig:1.1}
+\end{figure}
+
+\indent
+In this section we describe how PoS mining was originally implemented in Zano.
+
+\indent
+Suppose, Alice has few unspent outputs and wants to mine a PoS block using one of them as a stake. In such a scenario she acts as the following (Fig. \ref{fig:1.1}):
+
+\begin{enumerate}
+\item Gets hash identifier of the last PoW block in the blockchain, $last\_pow\_id$.
+
+\item Gets the last PoS block in the blockchain, and gets stake kernel hash identifier from it, $last\_pos\_kernel\_id$. Together with $last\_pow\_id$ they are called "stake modifier". It changes each time a new block is added to the blockchain. 
+
+\item Makes set $T$ of all possible timestamps for the new PoS block:
+\[ T = \{t : t_{min} \leq t \leq t_{max}, \; t \equiv 0 \mod{15} \} \]
+where $t_{min}$ and $t_{max}$ are bound to the current blockchain conditions. For the sake of simplicity we can assume that
+\[ t_{min} = \tau - T, \; t_{max} = \tau + T \]
+where $T$ is a constant and $\tau$ is current timestamp established in such a way, that it is the same across all the network nodes.
+
+\item Makes set $U$ of all her unspent transaction outputs (UTXO) that are eligible for staking (i.e. not locked, mature enough etc.). For each output $u$ from $U$ she also precalculates key image $I_u$.
+
+\item Each pair $(t, u) \in T \times U$ is being checked against PoS winning condition as the following:
+
+    \begin{enumerate}
+    \item for output $u$ build \textit{stake kernel} $K_u$ as a concatenation:
+
+    \[ K_u = last\_pow\_id \;\|\; last\_pos\_kernel\_id \;\|\; t \;\|\; I_u \]
+    where $I_u$ is the key image of the stake output $u$;
+    
+    \item Calculate hash $h_u = H_s(K_u)$;
+    
+    \item Finally, check the main condition:
+    \begin{equation} \label{old_pos_main_cond}
+    h_u \frac{D}{v_u} \stackrel{?}{\leq} 2^{256} \end{equation} 
+    where $D$ is the current PoS difficulty, and $v_u$ is the amount of the stake output $u$. 
+    
+    \end{enumerate}
+    
+    If inequality (\ref{old_pos_main_cond}) holds then it means the success of PoS mining! A block with timestamp $t$ and stake input, spending output $u$, could be constructed and broadcasted to the network.
+    
+\end{enumerate}
+
+If for all pairs $(t, u)$ the (\ref{old_pos_main_cond}) does not hold, Alice needs to wait until one of the following happened:
+\begin{itemize}
+    \item a new block added to the blockchain (this will change either $last\_pow\_id$ or $last\_pos\_kernel\_id$);
+    \item some time passes (this will change $t_{min}$ and $t_{max}$).
+\end{itemize}
+
+\indent
+Once this happens, Alice could perform another attempt of mining (items 1-5), as all $K_u$, and thus $h_u$, will have different values, giving more chances to win the main condition.
+
+
+We'd like to note the important property of (\ref{old_pos_main_cond}): as $h_u$ is the result of cryptographic hash function $H_s$ and could be considered as distributed evenly on $(0..L)$, the probability of wining the main condition is proportional to output amount $v_u$. 
+
+%\newpage
+
+\section{PoS direct spending scheme using hidden amounts} \label{sec_direct_spend}
+
+\noindent (\textit{Note: this variant of scheme requires stake inputs to directly refer to their outputs without decoys.})
+
+Consider a hidden amount scheme, where amount $v$ of an output is hidden using Pedersen\footcite[More information in original paper by T.P. Pedersen: ][]{Ped} commitment $A$:
+
+\[ A = v G + f H \quad (v < 2^{64}, \; f \neq 0) \]
+
+where $G$ and $H$ are generators for which DL relation is unknown, and $f$ is a random hiding mask.
+
+It's easy to see that (\ref{old_pos_main_cond}) can't be used anymore because it's requires using non-hidden $v$. Let's see how the main inequality could be modified.
+
+Suppose Alice has already prepared sets of timestamps ($T$) and outputs ($U$) eligible for staking as mentioned in section \ref{sec_open_amounts}. She then considers each pair $(t, u) \in T \times U$ against PoS win condition. She calculates
+
+\[ h = H_s( last\_pow\_id \;\|\; last\_pos\_kernel\_id \;\|\; t \;\|\; I_u ) \]
+
+As we mentioned above, $h$ can be considered as uniform randomness distributed evenly over $\mathbb{Z}_l$. Because hiding mask $f \neq 0$ and it is fixed for the selected output $u$, then the multiplication $hf (\mod{l})$ can also be considered as uniform randomness over $\mathbb{Z}_l$. \hl{TODO: formal proof may be needed}
+
+Taken this into account, Alice checks slightly adjusted main inequality:
+
+\begin{equation} \label{eq_new_ineq_hf}
+    hf < \floor{\frac{l}{D}}v \pmod l
+\end{equation}
+
+where $l$ is the order of the main subgroup. Here we moved from $2^{256}$ (used originally in (\ref{old_pos_main_cond})) to $l$ as all scalar operations in all the following equations hold modulo $l$ except the division $\floor{\frac{d_0}{D}}$.
+
+Note, that as soon as $D > 2^{64}$ and $v < 2^{64}$, the right side of (\ref{eq_new_ineq_hf}) never overlaps the $l$.
+
+Now turn inequality into the equality:
+
+\begin{equation} \label{eq_main_eq}
+    hf = \floor{\frac{d_0}{D}} v - b_v, \quad D \leq d_0 \leq l, \; b_v < 2^{64}
+\end{equation}
+
+Once \eqref{eq_new_ineq_hf} holds, Alice needs to calculate $d_0$ and $b_v$ so that \eqref{eq_main_eq} holds. If then she could convince someone of knowing $d_0$, $b_v$ to be in corresponding ranges, she could also convince, that \eqref{eq_new_ineq_hf} holds for particular $h$, and thus, for pair $(u, t)$. Now we construct such a proof in NIZK-manner.
+
+Rewrite \eqref{eq_main_eq} slightly:
+
+\begin{equation} \label{eq_part_g}
+    \eqref{eq_main_eq} \quad \Leftrightarrow \quad hf - dv + b_v = 0, \quad d = \floor{\frac{d_0}{D}}
+\end{equation}
+
+Let $b_f = df - hv$. The following equality holds:
+
+\begin{equation} \label{eq_part_h}
+    hv - df + b_f = 0
+\end{equation}
+
+Use \eqref{eq_part_g} and \eqref{eq_part_h} as scalar parts for scalar multiplication with $G$ and $H$ correspondingly:
+
+\begin{equation} \label{eq_ge}
+\eqref{eq_part_g}, \eqref{eq_part_h} \Rightarrow
+\left\{ \begin{aligned} 
+  h f - d v + b_v &= 0 \quad | \times G \\
+  h v - d f + b_f &= 0 \quad | \times H
+\end{aligned} \right.
+\end{equation}
+
+Considering commitments $A'=fG+vH, \; A=vG+fH, \; B=b_v G + b_f H$, we can rewrite \eqref{eq_ge} in terms of group elements operations: 
+
+\begin{equation} 
+    hA'-dA+B=\mathbf{0} \label{eq_ge_fin}
+\end{equation}
+
+where $\mathbf{0}$ is the identity element of $\mathbb{G}$.
+
+
+\subsection{$A'$ proof} \label{a_prime_proof}
+
+As the part of the whole PoS proof, Alice needs to convince a verifier that $A' = fG + vH$ without revealing $v$ and $f$. As the verifier knows public $A = vG + fH$ we can construct Schnorr-like proof as the following:
+
+\begin{enumerate}
+    \item Alice generates randomnesses $r_0, r_1 \stackrel{\$}{\leftarrow} \mathbb{Z}_l$ 
+    
+    \item Calculates $R_0 = r_0 (G + H), R_1 = r_1 (G - H)$
+    
+    \item Calculates non-interactive challenge $c = H_s(R_0, R_1, A', A)$
+    
+    \item Calculates $y_0 = r_0 + c(v+f), y_1 = r_1 + c(v-f)$
+    
+    \item Sends $(c, y_0, y_1)$ to the verifier.
+
+    \item Verifier makes sure that
+    \[ c \stackrel{?}{=} H_s(y_0(G+H)-c(A+A'), y_1(G-H)-c(A-A'), A', A)\]
+    if the above equation holds, the verifier is convinced that $A+A'=k_0(G+H)$ and $A-A'=k_1(G-H)$ for some $k_0$ and $k_1$, and thus due to Lemma \ref{l_AA'} he is convinced that  $A' = fG + vH$.
+\end{enumerate}
+
+
+\subsection{PoS proof} \label{ssec_pos_proof}
+
+Let's summarize the whole scheme.
+
+\begin{enumerate}
+    \item Alice prepares set of possible timestamps $T$ and staking outputs $U$.
+    
+    \item For each pair $(t, u)$ she calculates $h = H_s(\dots)$ and checks win condition \eqref{eq_new_ineq_hf}.
+    
+    \item If \eqref{eq_new_ineq_hf} holds she calculates:
+    \[ \begin{split}
+    A' &= fG + vH \\
+    d &= \floor{\frac{hf}{v}} + 1\\
+    b_v &= dv - hf \\
+    b_f &= df - hv \\
+    B &= b_v G + b_f H
+    \end{split}
+    \]
+    
+    \item Generates proof $(c, y)$ for the fact, that $A' = fG + vH$ (section \ref{a_prime_proof}).
+    
+    \item Makes PoS block with stake output $u$ and timestamp $t$, and adds PoS proof $\sigma$ to the block's data:
+    \begin{equation} \label{eq_pos_proof}
+    \sigma = \{ d, A', (c, y_0, y_1), B, \mathcal{R}_B \}
+    \end{equation}
+    where $\mathcal{R}_B$ is a range proof (e.g. Bulletproofs) for the fact, that $b_v < 2^{64}$ 
+\end{enumerate}
+
+\noindent 
+Verifiers on the network check PoS block as the following:
+
+\begin{enumerate}
+    \item $d \leq \floor{\frac{l}{D}}$
+    
+    \item Check Schnorr-like signature $(c, y_0, y_1)$ for $A'$.
+    
+    \item Check $hA'-dA+B=\mathbf{0}$
+    
+    \item Check range proof $\mathcal{R}_B$
+\end{enumerate}
+
+
+\subsection{Limitations}
+
+The proposed scheme works only under the following conditions:
+\begin{itemize}
+    \item Proof-of-stake difficulty: $D > 2^{64}$
+    \item Output's amount: $v < 2^{64}$
+    \item Commitment's mask: $f \neq 0$
+\end{itemize}
+
+\subsection{Size of PoS proof}
+
+Let's estimate size of the proof \eqref{eq_pos_proof}.
+
+It has two group elements, four field elements plus the size of the range proof $\mathcal{R}_B$.
+
+In case of using Bulletproofs+ \cite{BP+} the size of a single proof with $n = 64$ is 
+
+\[2 \cdot \ceil{\log_2(n)} + 3 = 15\]
+
+group elements and 3 field elements.
+
+In total, for PoS proof we have 17 group elements and 7 field elements. If both field and group elements have compressed size of 32 bytes, that is the case for Ed25519 used in Zano, then the total size of proof could be estimated as $17+7=24$ elements or $24 \cdot 32 = 768$ bytes.
+
+
+\section{Ring-friendly PoS hidden amount scheme}
+
+The solution we proposed in section \ref{sec_direct_spend} can't be used in case of CT-like mining transaction with a non-empty decoy set: in such a transaction stake input would refer to a \textit{set} of outputs and thus a set of \textit{pseudo} output commitments is used instead of a single commitment $A$ in which input's hidden amount $v$ is committed to. Therefore verifiers on the network would not be able to check \eqref{eq_ge_fin}, as they don't know the correct $A$. 
+
+Here we propose a solution to this problem.
+
+
+\subsection{Ring-friendly PoS scheme}
+
+Suppose, Alice wants to mine a PoS block and she already went though steps 1-3 above (subsection \ref{ssec_pos_proof}). She has calculated $A', d, B$ so that $ hA' - dA + B = \mathbf{0} $ holds.
+
+Then she goes as the following:
+\begin{enumerate}
+    \setcounter{enumi}{3} 
+    \item Randomly selects a set of apparently unspent decoy outputs $\{u_i\}$ from the blockchain, and puts her output, which won the PoS main condition \eqref{eq_new_ineq_hf} at random index $\pi$ into that set. Note, that $i$-th decoy output has its hidden amount committed to in $A_i$ (and $A_\pi$ is the commitment to her own output). Also note, that Alice doesn't know amounts $v_i$ and masks $f_i$ for the outputs she selected as decoys in general.
+    
+    \item For each decoy output $u_i \; (i \neq \pi)$ Alice generates random values $b_{v,i} \stackrel{\$}{\leftarrow} \mathbb{Z}_{2^{64}}$, $b_{f,i} \stackrel{\$}{\leftarrow} \mathbb{Z}_l$ and commitments to them: 
+    
+    \begin{equation} \label{rfpos_Bi}
+        B_i = b_{v,i} G + b_{f,i} H
+    \end{equation} 
+    
+    She also calculates complementary commitment $A'$:
+    
+    \begin{equation} \label{rfpos_Aprimei}
+        A'_i = h^{-1}(dA_i - B_i)
+    \end{equation}
+    
+    As before, $B_\pi$ and $A'_\pi$ were calculated earlier and correspond to her own output.
+    
+    Now, consider system of equations $hA'_i - dA_i + B_i = \mathbf{0}$ or:
+    
+    \begin{equation} \label{rfpos_sys}
+    \left\{ \begin{aligned} 
+        &h A'_0 &- &d A_0 &+ &B_0 &= \mathbf{0} \\
+        &&& \dots &&& \\
+        &h A'_\pi &- &d A_\pi &+  &B_\pi &= \mathbf{0} \\
+        &&& \dots &&& \\
+        &h A'_{n-1} &- &d A_{n-1} &+ &B_{n-1} &= \mathbf{0}
+    \end{aligned} \right.
+    \end{equation}
+    
+    Here $\pi$-th equation holds, because it equivalents to \eqref{eq_ge_fin}, and others hold because of \eqref{rfpos_Bi} and \eqref{rfpos_Aprimei}.
+    
+    \item Consider pair of group elements $(A_i+A'_i, A_i-A'_i)$. If $i = \pi$ Alice is able to calculate secrets $k_0$ and $k_1$ so the following holds:
+    \begin{equation*}
+    \left\{ \begin{aligned} 
+        A_i + A'_i &= k_0 (G + H) \\
+        A_i - A'_i &= k_1 (G - H)
+    \end{aligned} \right.
+    \end{equation*}
+    
+    For all the others $i \neq \pi$ Alice would not be able to calculate such $k_0, k_1$, unless she selected her own output as a decoy (and thus, she knows the corresponding hidden amount and mask). But in such a case \eqref{rfpos_sys} holds only if she is able to calculate appropriate $d$ and $b_{v,i}$ as well, which is equivalent to satisfying \eqref{eq_new_ineq_hf} for that "decoy" output.
+    
+    According to Lemma \ref{l_AA'}, a proof of knowing $k_0, k_1$ is equivalent to proof that $A'_i = fG + vH$.
+    
+    Alice adds proof of knowing secret keys $k_0, k_1$ into the main ring signature as additional two layers \footcite[Here we're using terminology and ideas from Multi-layered Linkable Spontaneous Anonymous Group signature proposed in][]{MRL0005}, in order to convince verifiers that $A'_i = fG + vH$ and $A_i = vG + fH$ hold together for the same output that is being spent.
+    
+    To achieve this, main ring signature may be extended by adding two more group elements to the calculation of the non-interactive challenge as the following:
+    
+    \begin{equation*} \begin{aligned}
+        c_{\pi+1} &= H_s(\dots, \; \alpha_0 (G + H), \; \alpha_1 (G - H) \\
+        c_{i+1} &= H_s(\dots, \; r^0_i (G + H) + c_i (A_i + A'_i), \; r^1_i (G - H) + c_i (A_i - A'_i) \\
+        r^0_\pi &= \alpha_0 - c_\pi k_0 \\
+        r^1_\pi &= \alpha_1 - c_\pi k_1
+     \end{aligned} \end{equation*}
+     
+     \item Finally, Alice adds PoS signature $\sigma = \{ d, \{A'_i\}, \{B_i\}, \{\mathcal{R}_B_i\} \}$ where $\{\mathcal{R}_B_i\}$ are range proofs (e.g. Bulletproofs) for the fact, that $b_{v,i} < 2^{64}$, to the mining transaction.
+\end{enumerate}
+
+
+\subsection{Verification of ring-friendly PoS scheme}
+Verifiers on the network check PoS block as the following:
+
+\begin{enumerate}
+    \item $d \leq \floor{\frac{l}{D}}$
+    
+    \item Calculate $h$ and check $h A'_i - d A_i + B_i = \mathbf{0}$
+    
+    \item Check stake input's ring signature with additional layers for $A'_i$
+    
+    \item Check range proofs $\mathcal{R}_B_i$
+\end{enumerate}
+
+
+\subsection{Size of ring-friendly PoS proof}
+
+Let's estimate the size of the proof for $n-1$ decoy outputs, so the total size of the ring is $n$. Assume, we're using Bulletproofs+ for range proof, which is 15 group elements and 3 field elements per value (without aggregation).
+
+For each ring member we have: a complementary commitment $A'_i$, group element $B_i$ and 15 groups elements for it's range proof $\mathcal{R}_B_i$.
+
+Ring signature extension would require, supposedly, only adding $r^0_i$ and $r^1_i$, that gives $2n$ additional field elements.
+
+In total we have $17n$ group elements and $5n+1$ field elements. If both field and group elements have compressed size of 32 bytes, that is the case for Ed25519 used in Zano, then the total size of proof could be estimated as $22n+1$ elements or $704n+32$ bytes.
+
+We'd like to note, that the total size could be greatly reduced by using aggregated Bulletproofs+.
+
+
+%\bibliographystyle{unsrtnat}
+%\bibliography{references}
+\printbibliography
+
+
+
+\newpage
+\appendix
+\section{Lemmas}
+
+\newtheorem{theorem}{Theorem}%[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+
+
+\begin{lemma} \label{l_AA'}
+Let $v, f \in \mathbb{Z}_l$ and $A = vG + fH$, where $G$ and $H$ -- public generators in cycle group $\mathbb{G}$ of prime order $l$, for which DL relation is unknown. The Proover knows $v$ and $f$. The Verifier knows only $A$. If the Proover wants to convince the Verifier that the given $A' = fG + vH$ without revealing secrets $v$ and $f$, it is enough to provide a proof to the fact that he knows $y_0$ and $y_1$ such, that:
+\[ A + A' = y_0 (G+H) \]
+\[ A - A' = y_1 (G-H) \]
+\end{lemma}
+
+\begin{proof}
+Suppose the Verifier is convinced that the Proover knows $y_0$ and $y_1$ such, that the equations above hold. Also suppose, that contrary to the lemma's statement $A' = aG + bH \neq fG + vH$ where $a, b \in \mathbb{Z}_l$.
+
+Substitute equations for $A$ and $A'$:
+
+\begin{equation*}
+    \left\{ \begin{aligned} 
+        vG + fH + aG + bH = y_0 (G+H) \\
+        vG + fH - aG - bH = y_1 (G-H)
+    \end{aligned} \right.
+\end{equation*}
+
+As DL relation between $G$ and $H$ is unknown, we can split the equations:
+
+\begin{equation*}
+    \left\{ \begin{aligned} 
+        (v + a) G &= y_0 G \\
+        (f + b) H &= y_0 H \\
+        (v - a) G &= y_1 G \\
+        (f - b) H &= -y_1 H
+    \end{aligned} \right.
+\end{equation*}
+
+\begin{equation*}
+    \Rightarrow
+    \left\{ \begin{aligned} 
+        v + a &= f + b \\
+        v - a &= b - f
+    \end{aligned} \right.
+\end{equation*}
+
+\begin{equation*}
+    \Leftrightarrow
+    \left\{ \begin{aligned} 
+        2v &= 2b \\
+        2a &= 2f
+    \end{aligned} \right.
+    \Rightarrow A' = aG + bH = fG + vH 
+\end{equation*}
+
+Contradiction.
+
+\end{proof}
+
+\end{document}
