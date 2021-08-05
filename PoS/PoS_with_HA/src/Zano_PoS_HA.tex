@@ -24,7 +24,6 @@
 \usepackage{soul} % highlighting
 
 \newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
-
 \newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
 
 \hypersetup{
@@ -46,7 +45,7 @@
 \title{\huge{\textbf{A Proof-of-Stake scheme for confidential transactions with hidden amounts}}}
 \author{\large{sowle}}
 \affil{\small{Zano project \\ \texttt{val@zano.org} \\ \url{https://zano.org}}}
-\date{\small{July 2021}}
+\date{\small{July 2021\footnote{Version 2.0. Last update: 2021-08-05. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
 
 
 \begin{document}
@@ -165,7 +164,7 @@ Now turn inequality into the equality:
     hf = \floor{\frac{d_0}{D}} v - b_v, \quad D \leq d_0 \leq l, \; b_v < 2^{64}
 \end{equation}
 
-Once \eqref{eq_new_ineq_hf} holds, Alice needs to calculate $d_0$ and $b_v$ so that \eqref{eq_main_eq} holds. If then she could convince someone of knowing $d_0$, $b_v$ to be in corresponding ranges, she could also convince, that \eqref{eq_new_ineq_hf} holds for particular $h$, and thus, for pair $(u, t)$. Now we construct such a proof in NIZK-manner.
+Once \eqref{eq_new_ineq_hf} holds, Alice needs to calculate $d_0$ and $b_v$ so that \eqref{eq_main_eq} holds. If then she could convince someone of knowing $d_0$, $b_v$ to be in corresponding ranges, she could also convince, that \eqref{eq_new_ineq_hf} holds\footnote{Except with negligible probability in case when $\floor{\frac{d_0}{D}}v < b_v$} for particular $h$, and thus, for pair $(u, t)$. Now we construct such a proof in NIZK-manner.
 
 Rewrite \eqref{eq_main_eq} slightly:
 
@@ -218,6 +217,7 @@ As the part of the whole PoS proof, Alice needs to convince a verifier that $A' 
     if the above equation holds, the verifier is convinced that $A+A'=k_0(G+H)$ and $A-A'=k_1(G-H)$ for some $k_0$ and $k_1$, and thus due to Lemma \ref{l_AA'} he is convinced that  $A' = fG + vH$.
 \end{enumerate}
 
+In appendix \ref{s_A'_proof_intuition} we give an intuition for the fact that this proof does not reveal parts of commitments.
 
 \subsection{PoS proof} \label{ssec_pos_proof}
 
@@ -287,19 +287,19 @@ In total, for PoS proof we have 17 group elements and 7 field elements. If both 
 
 \section{Ring-friendly PoS hidden amount scheme}
 
-The solution we proposed in section \ref{sec_direct_spend} can't be used in case of CT-like mining transaction with a non-empty decoy set: in such a transaction stake input would refer to a \textit{set} of outputs and thus a set of \textit{pseudo} output commitments is used instead of a single commitment $A$ in which input's hidden amount $v$ is committed to. Therefore verifiers on the network would not be able to check \eqref{eq_ge_fin}, as they don't know the correct $A$. 
+The solution we proposed in section \ref{sec_direct_spend} can't be used in case of CT-like mining transaction with a non-empty decoy set: in such a transaction stake input would refer to a \textit{set} of outputs and thus a set of \textit{pseudo} output commitments is used instead of a single commitment $A$ in which input's hidden amount $v$ is committed to. Therefore verifiers on the network would not be able to check \eqref{eq_ge_fin}, as they don't know the particular $A$. 
 
 Here we propose a solution to this problem.
 
 
 \subsection{Ring-friendly PoS scheme}
 
-Suppose, Alice wants to mine a PoS block and she already went though steps 1-3 above (subsection \ref{ssec_pos_proof}). She has calculated $A', d, B$ so that $ hA' - dA + B = \mathbf{0} $ holds.
+Suppose Alice wants to mine a PoS block, and she already went through steps 1-3 above (subsection \ref{ssec_pos_proof}). She calculated such $A', d, B$ that $ hA' - dA + B = \mathbf{0} $ holds.
 
 Then she goes as the following:
 \begin{enumerate}
     \setcounter{enumi}{3} 
-    \item Randomly selects a set of apparently unspent decoy outputs $\{u_i\}$ from the blockchain, and puts her output, which won the PoS main condition \eqref{eq_new_ineq_hf} at random index $\pi$ into that set. Note, that $i$-th decoy output has its hidden amount committed to in $A_i$ (and $A_\pi$ is the commitment to her own output). Also note, that Alice doesn't know amounts $v_i$ and masks $f_i$ for the outputs she selected as decoys in general.
+    \item Randomly selects a set of apparently unspent decoy outputs $\{u_i\}$ from the blockchain and puts her output, which won the PoS main condition \eqref{eq_new_ineq_hf} at random index $\pi$ to that set. Note that $i$-th decoy output has its hidden amount committed to in $A_i$ (and $A_\pi$ is the commitment to her own output). Also note, that in general Alice doesn't know amounts $v_i$ and masks $f_i$ for the outputs she selected as decoys.
     
     \item For each decoy output $u_i \; (i \neq \pi)$ Alice generates random values $b_{v,i} \stackrel{\$}{\leftarrow} \mathbb{Z}_{2^{64}}$, $b_{f,i} \stackrel{\$}{\leftarrow} \mathbb{Z}_l$ and commitments to them: 
     
@@ -315,7 +315,7 @@ Then she goes as the following:
     
     As before, $B_\pi$ and $A'_\pi$ were calculated earlier and correspond to her own output.
     
-    Now, consider system of equations $hA'_i - dA_i + B_i = \mathbf{0}$ or:
+    Now, consider system of equations $hA'_i - dA_i + B_i = \mathbf{0}$ or in other notation:
     
     \begin{equation} \label{rfpos_sys}
     \left\{ \begin{aligned} 
@@ -327,23 +327,22 @@ Then she goes as the following:
     \end{aligned} \right.
     \end{equation}
     
-    Here $\pi$-th equation holds, because it equivalents to \eqref{eq_ge_fin}, and others hold because of \eqref{rfpos_Bi} and \eqref{rfpos_Aprimei}.
+    Here $\pi$-th equation holds, because of equivalence to \eqref{eq_ge_fin}, and others hold because of \eqref{rfpos_Bi} and \eqref{rfpos_Aprimei}.
     
-    \item Consider pair of group elements $(A_i+A'_i, A_i-A'_i)$. If $i = \pi$ Alice is able to calculate secrets $k_0$ and $k_1$ so the following holds:
+    \item Consider a pair of group elements $(A_i+A'_i, A_i-A'_i)$. If $i = \pi$ Alice is able to calculate secrets $k_0$ and $k_1$ so the following holds:
     \begin{equation*}
     \left\{ \begin{aligned} 
         A_i + A'_i &= k_0 (G + H) \\
         A_i - A'_i &= k_1 (G - H)
     \end{aligned} \right.
     \end{equation*}
-    
-    For all the others $i \neq \pi$ Alice would not be able to calculate such $k_0, k_1$, unless she selected her own output as a decoy (and thus, she knows the corresponding hidden amount and mask). But in such a case \eqref{rfpos_sys} holds only if she is able to calculate appropriate $d$ and $b_{v,i}$ as well, which is equivalent to satisfying \eqref{eq_new_ineq_hf} for that "decoy" output.
+    Indeed: $k_0 = v + f$, $k_1 = v - f$. For all the others $i \neq \pi$ Alice would not be able to calculate such $k_0, k_1$, unless she selected her own output as a decoy (and thus, she knows the corresponding hidden amount and mask). But in such a case \eqref{rfpos_sys} holds only if she is able to calculate appropriate $d$ and $b_{v,i}$ as well, which is equivalent to satisfying \eqref{eq_new_ineq_hf} for that "decoy" output.
     
     According to Lemma \ref{l_AA'}, a proof of knowing $k_0, k_1$ is equivalent to proof that $A'_i = fG + vH$.
     
-    Alice adds proof of knowing secret keys $k_0, k_1$ into the main ring signature as additional two layers \footcite[Here we're using terminology and ideas from Multi-layered Linkable Spontaneous Anonymous Group signature proposed in][]{MRL0005}, in order to convince verifiers that $A'_i = fG + vH$ and $A_i = vG + fH$ hold together for the same output that is being spent.
+    Alice adds proof of knowing secret keys $k_0, k_1$ into the main ring signature as two additional layers \footcite[Here we're using terminology and ideas from Multi-layered Linkable Spontaneous Anonymous Group signature proposed in][]{MRL0005}, in order to convince verifiers that $A'_i = fG + vH$ and $A_i = vG + fH$ both hold for the output being spent.
     
-    To achieve this, main ring signature may be extended by adding two more group elements to the calculation of the non-interactive challenge as the following:
+    To achieve this, we could extend the main ring signature by adding two more group elements to the calculation of the non-interactive challenge as the following:
     
     \begin{equation*} \begin{aligned}
         c_{\pi+1} &= H_s(\dots, \; \alpha_0 (G + H), \; \alpha_1 (G - H) \\
@@ -352,7 +351,7 @@ Then she goes as the following:
         r^1_\pi &= \alpha_1 - c_\pi k_1
      \end{aligned} \end{equation*}
      
-     \item Finally, Alice adds PoS signature $\sigma = \{ d, \{A'_i\}, \{B_i\}, \{\mathcal{R}_B_i\} \}$ where $\{\mathcal{R}_B_i\}$ are range proofs (e.g. Bulletproofs) for the fact, that $b_{v,i} < 2^{64}$, to the mining transaction.
+     \item Finally, Alice adds PoS signature $\sigma = \{ d, \{A'_i\}, \{B_i\}, \{\mathcal{R}_B_i\} \}$ to the mining transaction, where $\{\mathcal{R}_B_i\}$ are range proofs (e.g. Bulletproofs+) for the fact, that $b_{v,i} < 2^{64}$.
 \end{enumerate}
 
 
@@ -372,21 +371,17 @@ Verifiers on the network check PoS block as the following:
 
 \subsection{Size of ring-friendly PoS proof}
 
-Let's estimate the size of the proof for $n-1$ decoy outputs, so the total size of the ring is $n$. Assume, we're using Bulletproofs+ for range proof, which is 15 group elements and 3 field elements per value (without aggregation).
+Let's estimate the size of the proof for $n-1$ decoy outputs, so the total size of the ring is $n$. Assume, we're using aggregated Bulletproofs+ for range proofing. According to \cite{BP+} it comprises $2 \cdot \ceil{\log_2(m) + \log_2(n)} + 3$ elements in $\mathbb{G}$ and 3 elements in $\mathbb{Z}_l$, where $m = 64$ for range $2^{64}$.
 
-For each ring member we have: a complementary commitment $A'_i$, group element $B_i$ and 15 groups elements for it's range proof $\mathcal{R}_B_i$.
+For each ring member we need to store 2 elements in $\mathbb{G}$ ($A'_i$ and $B_i$) and, supposedly, only 2 elements in $\mathbb{Z}_l$ for ring signature extension ($r^0_i$ and $r^1_i$).
 
-Ring signature extension would require, supposedly, only adding $r^0_i$ and $r^1_i$, that gives $2n$ additional field elements.
+Additionally, we need to store one element in $\mathbb{Z}_l$ per PoS signature ($d$).
 
-In total we have $17n$ group elements and $5n+1$ field elements. If both field and group elements have compressed size of 32 bytes, that is the case for Ed25519 used in Zano, then the total size of proof could be estimated as $22n+1$ elements or $704n+32$ bytes.
-
-We'd like to note, that the total size could be greatly reduced by using aggregated Bulletproofs+.
-
+In total we have $2n + 2 \cdot \ceil{\log_2(n)} + 15$ group elements and $2n + 4$ field elements. If both field and group elements have compressed size of 32 bytes, that is the case for Ed25519 used in Zano, then the total size of additional PoS data could be estimated as $4n + 2 \cdot \ceil{\log_2(n)} + 19$ elements or $128n + 64 \cdot \ceil{\log_2(n)} + 608$ bytes.
 
 %\bibliographystyle{unsrtnat}
 %\bibliography{references}
 \printbibliography
-
 
 
 \newpage
@@ -399,7 +394,7 @@ We'd like to note, that the total size could be greatly reduced by using aggrega
 
 
 \begin{lemma} \label{l_AA'}
-Let $v, f \in \mathbb{Z}_l$ and $A = vG + fH$, where $G$ and $H$ -- public generators in cycle group $\mathbb{G}$ of prime order $l$, for which DL relation is unknown. The Proover knows $v$ and $f$. The Verifier knows only $A$. If the Proover wants to convince the Verifier that the given $A' = fG + vH$ without revealing secrets $v$ and $f$, it is enough to provide a proof to the fact that he knows $y_0$ and $y_1$ such, that:
+Let $v, f \in \mathbb{Z}_l$ and $A = vG + fH$, where $G$ and $H$ -- public generators in cycle group $\mathbb{G}$ of prime order $l$, for both of which DL relation is unknown. The Proover knows $v$ and $f$. The Verifier knows only $A$. If the Proover wants to convince the Verifier that the given $A' = fG + vH$ without revealing secrets $v$ and $f$, it is enough to provide a proof to the fact that he knows $y_0$ and $y_1$ such, that:
 \[ A + A' = y_0 (G+H) \]
 \[ A - A' = y_1 (G-H) \]
 \end{lemma}
@@ -444,8 +439,51 @@ As DL relation between $G$ and $H$ is unknown, we can split the equations:
     \Rightarrow A' = aG + bH = fG + vH 
 \end{equation*}
 
-Contradiction.
+This contradition concludes the proof.
 
 \end{proof}
+
+\newpage
+\section{Intuition for $A'$ proof} \label{s_A'_proof_intuition}
+
+Let us give an intuition for the fact that the $A'$ proof given in subsection \ref{a_prime_proof} for the fact that $A' = fG + vH$  does not reveal $vG$, $fH$, $fG$ or $vH$ to the Verifier. \hl{TODO: formal proof may be needed}
+
+The Verifier gets $\{y_0, y_1, c\}$ from the Proover and thus can construct the following system: 
+\begin{equation*} %\label{eq_l}
+    \left\{ \begin{aligned} 
+        A &= vG + fH \\
+        A' &= fG + vH \\
+        y_0 &= r_0 + c (v + f) \\
+        y_1 &= r_1 + c (v - f) \\
+        c &= H_s(r_0(G+H), r_1(G-H), A, A')
+    \end{aligned} \right.
+\end{equation*}
+where all the known values are on the left (except the generators). As $c$ is the result of cryptographic hash function $H_s$ of fixed arguments it can be considered by Verifier as a known constant, so we'll exclude equation for $c$.
+
+Let's multiply all terms in equations for $y_0$ and $y_1$ by $G$ and $H$, and make a substitution:
+
+\begin{equation} \label{eq_A_proof_intuition_greek}
+    \left\{ \begin{aligned} 
+        y_0 G &= r_0 G + \alpha + \gamma \\
+        y_0 H &= r_0 H + \delta + \beta \\
+        y_1 G &= r_1 G + \alpha - \gamma \\
+        y_1 H &= r_1 H + \delta - \beta \\
+        cA &= \alpha + \beta \\
+        cA' &= \delta + \gamma
+    \end{aligned} \right.
+\end{equation}
+where
+\[
+\alpha = cvG \quad \beta = cfH \quad \gamma = cfG \quad \delta = cvH
+\]
+We would like to show that it's impossible for Verifier to calculate $\alpha, \beta, \gamma, \delta$.
+
+There are six linear independent equations in \eqref{eq_A_proof_intuition_greek} and also six unknown values: $\alpha, \beta, \gamma, \delta, r_0, r_1$. It looks like \eqref{eq_A_proof_intuition_greek} could be solved.
+
+However, due to discrete logarithm assumption scalar multiplications $r_0 G$, $r_0 H$, $r_1 G$ and $r_1 H$ should be considered as four independent unknowns rather than two $r_0, r_1$. Therefore there are eight unknowns in \eqref{eq_A_proof_intuition_greek} and it could not be solved.
+
+Note, that if we assume that $r_0 = r_1$ or at least $r_0 k = r_1$, where $k \in \mathbb{Z}_l$ is a known value, the number of unknowns would be reduced to six and the system could be solved, so Verifier could calculate $\alpha, \beta, \gamma, \delta$.
+
+However, Proover generates $r_0$ and $r_1$ uniformly at random in $\mathbb{Z}_l$.
 
 \end{document}
