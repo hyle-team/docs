@@ -45,7 +45,7 @@
 \title{\huge{\textbf{A Proof-of-Stake scheme for confidential transactions with hidden amounts}}}
 \author{\large{sowle}}
 \affil{\small{Zano project \\ \texttt{val@zano.org} \\ \url{https://zano.org}}}
-\date{\small{July 2021\footnote{Version 2.1. Last update: 2021-08-05. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
+\date{\small{July 2021\footnote{Version 3.0. Last update: 2021-08-08. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
 
 
 \begin{document}
@@ -238,7 +238,7 @@ Let's summarize the whole scheme.
     \end{split}
     \]
     
-    \item Generates proof $(c, y)$ for the fact that $A' = fG + vH$ (section \ref{a_prime_proof}).
+    \item Generates proof $(c, y_0, y_1)$ for the fact that $A' = fG + vH$ (section \ref{a_prime_proof}).
     
     \item Makes a PoS block with stake output $u$ and timestamp $t$, and adds PoS proof $\sigma$ to the block's data:
     \begin{equation} \label{eq_pos_proof}
@@ -261,7 +261,7 @@ Verifiers on the network check the PoS block as follows:
 \end{enumerate}
 
 
-\subsection{Limitations}
+\subsection{Limitations} \label{s_limitations}
 
 The proposed scheme works only under the following conditions:
 \begin{itemize}
@@ -355,7 +355,7 @@ Then she continues as follows:
 \end{enumerate}
 
 
-\subsection{Verification of ring-friendly PoS scheme}
+\subsection{Verification of ring-friendly PoS scheme} \label{s_verification_ring_friendly}
 Verifiers on the network check the PoS block as follows:
 
 \begin{enumerate}
@@ -478,12 +478,42 @@ where
 \]
 We would like to show that it's impossible for the Verifier to calculate $\alpha, \beta, \gamma, \delta$.
 
-There are six linear independent equations in \eqref{eq_A_proof_intuition_greek} and also six unknown values: $\alpha, \beta, \gamma, \delta, r_0, r_1$. It looks like \eqref{eq_A_proof_intuition_greek} could be solved.
+There are six linearly independent equations in \eqref{eq_A_proof_intuition_greek} and also six unknown values: $\alpha, \beta, \gamma, \delta, r_0, r_1$. It looks like \eqref{eq_A_proof_intuition_greek} could be solved.
 
 However, due to discrete logarithm assumption scalar multiplications $r_0 G$, $r_0 H$, $r_1 G$ and $r_1 H$ should be considered as four independent unknowns rather than two $r_0, r_1$. Therefore, there are eight unknowns in \eqref{eq_A_proof_intuition_greek} and it can not be solved.
 
 Note that if we assume that $r_0 = r_1$ or at least $r_0 k = r_1$, where $k \in \mathbb{Z}_l$ is a known value, the number of unknowns would be reduced to six and the system could be solved, so the Verifier could calculate $\alpha, \beta, \gamma, \delta$.
 
 However, the Prover generates $r_0$ and $r_1$ uniformly at random in $\mathbb{Z}_l$.
+
+
+\newpage
+\section{How to ensure $f \neq 0$}
+
+Here we discuss how to ensure that $f \neq 0$ for commitments in case the underlaying transaction protocol does not guarantee that.
+
+In subsection \ref{s_limitations} we mentioned that the proposed PoS scheme works only under certain conditions, and one of them is the commitment mask $f$ must be nonzero for all staking outputs. The reasoning behind that is simple: suppose Alice prepared a UTXO with amount $v$ committed to $A$ with zero mask $f$: $A = vG + 0H = vG$. Such an output can be staked instantly as the winning condition is met regardless of $h$:
+
+\[ hA' - dA + B = \mathbf{0} \quad \eqref{eq_ge_fin} \quad \stackrel{f = 0}{\Longrightarrow} \quad hvH - dvG + B = \mathbf{0} \]
+
+This implies that for \textit{any} given $h$, point $B = (dv)G + (-hv)H$ and scalar $d = 1$ will satisfy all conditions mentioned in subsection \ref{s_verification_ring_friendly}.
+
+Obviously, this can be solved by providing a proof that $f \neq 0$ for each output in the blockchain and forcing all verifiers to validate it. To avoid such undesirable expenses consider the following idea.
+
+Let's require adding $f'H$ to all the commitments $A_i$ before using them in the PoS protocol, where $f'$ is a public constant that is unknown to Alice when she generates hiding mask $f$ for the output.
+
+For instance, $f'$ can be calculated as $f' = H_s(block\_id)$, where $block\_id$ is the hash identifier of the block containing that output.
+Consequently, substituting $f+f'$ for $f$ in \eqref{eq_ge} we get:
+\begin{equation*}
+\left\{ \begin{aligned} 
+  h (f + f') - d v + b_v &= 0 \quad | \times G \\
+  h v - d (f + f') + b_f &= 0 \quad | \times H
+\end{aligned} \right.
+\end{equation*}
+
+Now for \eqref{eq_ge_fin} we obtain:
+\[ hA' - dA + B + f'(hG - dH) = \mathbf{0} \]
+
+With such a modification Alice won't be able to gain an advantage when choosing $f$.
 
 \end{document}
