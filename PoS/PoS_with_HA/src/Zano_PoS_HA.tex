@@ -45,7 +45,7 @@
 \title{\huge{\textbf{A Proof-of-Stake scheme for confidential transactions with hidden amounts}}}
 \author{\large{sowle}}
 \affil{\small{Zano project \\ \texttt{val@zano.org} \\ \url{https://zano.org}}}
-\date{\small{July 2021\footnote{Version 3.0. Last update: 2021-08-08. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
+\date{\small{July 2021\footnote{Version 3.1. Last update: 2021-08-17. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
 
 
 \begin{document}
@@ -61,10 +61,11 @@ We propose an algorithm which is compatible with such transactions, including tr
 \section{Notation}
 Let $\mathbb{G}$ denote the main subgroup of the Ed25519 curve (\cite{ed25519_site}) and $\mathbb{Z}_p$ denote a ring of integers modulo $p$.
 
-$l$ is the order of $\mathbb{G}$: $\#\mathbb{G} = l = 2^{252} + 27742317777372353535851937790883648493$.
+$l$ is the order of $\mathbb{G}$: $l = \#\mathbb{G} = 2^{252} + 27742317777372353535851937790883648493$.
 
 For  any  set $X$, $x \stackrel{\$}{\leftarrow} X$ means uniform  sampling of $x$ at random from $X$. 
 
+For any integers $x$, $y$, $\floor{\frac{x}{y}}$ denotes the integer part of \textit{integer arithmetic} division.
 
 
 \section{PoS scheme using open amounts} \label{sec_open_amounts}
@@ -126,7 +127,7 @@ If for all pairs $(t, u)$ the (\ref{old_pos_main_cond}) does not hold, Alice nee
 Once this happens, Alice can perform another attempt at mining (items 1-5) as all $K_u$, and thus $h_u$, will have different values, giving new opportunities to meet the main condition.
 
 
-We'd like to note the following important property of (\ref{old_pos_main_cond}): as $h_u$ is the result of cryptographic hash function $H_s$ and could be considered as distributed evenly on $(0..L)$, the probability of meeting the main condition is proportional to output amount $v_u$. 
+We'd like to note the following important property of (\ref{old_pos_main_cond}): as $h_u$ is the result of cryptographic hash function $H_s$ and could be considered as distributed evenly over $\mathbb{Z}_l$, the probability of meeting the main condition is proportional to output amount $v_u$. 
 
 %\newpage
 
@@ -138,7 +139,7 @@ Consider a hidden amount scheme, where amount $v$ of an output is hidden using P
 
 \[ A = v G + f H \quad (v < 2^{64}, \; f \neq 0) \]
 
-where $G$ and $H$ are generators for which DL relation is unknown, and $f$ is a random hiding mask.
+where $G$ and $H$ are generators in $\mathbb{G}$ for which DL relation is unknown, and $f$ is a random hiding mask.
 
 It's easy to see that (\ref{old_pos_main_cond}) can't be used anymore because it requires using non-hidden $v$. Let's see how the main inequality could be modified.
 
@@ -151,7 +152,7 @@ As we mentioned above, $h$ can be considered as uniform randomness distributed e
 Taking this into account, Alice checks the slightly adjusted main inequality:
 
 \begin{equation} \label{eq_new_ineq_hf}
-    hf < \floor{\frac{l}{D}}v \pmod l
+    hf \bmod{l} \; < \; \floor{\frac{l}{D}}v
 \end{equation}
 
 where $l$ is the order of the main subgroup. Here we moved from $2^{256}$ (used originally in (\ref{old_pos_main_cond})) to $l$ as all scalar operations in all the following equations hold modulo $l$ except the division $\floor{\frac{d_0}{D}}$.
@@ -161,7 +162,7 @@ Note that as soon as $D > 2^{64}$ and $v < 2^{64}$, the right side of (\ref{eq_n
 Now we transform the inequality to equality:
 
 \begin{equation} \label{eq_main_eq}
-    hf = \floor{\frac{d_0}{D}} v - b_v, \quad D \leq d_0 \leq l, \; b_v < 2^{64}
+    hf \; \bmod l = \floor{\frac{d_0}{D}} v - b_v, \quad D \leq d_0 \leq l, \; b_v < 2^{64}
 \end{equation}
 
 Once \eqref{eq_new_ineq_hf} holds, Alice needs to calculate $d_0$ and $b_v$ so that \eqref{eq_main_eq} holds. If then she can convince a verifier of knowing $d_0$, $b_v$ to be in corresponding ranges, she can also convince them that \eqref{eq_new_ineq_hf} holds\footnote{Except with negligible probability in case when $\floor{\frac{d_0}{D}}v < b_v$} for particular $h$, and thus, for pair $(u, t)$. Now we construct such a proof in a NIZK-manner.
@@ -208,7 +209,7 @@ As part of the whole PoS proof, Alice needs to convince a verifier that $A' = fG
     
     \item Calculates non-interactive challenge $c = H_s(R_0, R_1, A', A)$
     
-    \item Calculates $y_0 = r_0 + c(v+f), y_1 = r_1 + c(v-f)$
+    \item Calculates $y_0 = r_0 + c(v+f)$, $y_1 = r_1 + c(v-f)$
     
     \item Sends $(c, y_0, y_1)$ to the verifier.
 
@@ -231,7 +232,7 @@ Let's summarize the whole scheme.
     \item If \eqref{eq_new_ineq_hf} holds, she calculates:
     \[ \begin{split}
     A' &= fG + vH \\
-    d &= \floor{\frac{hf}{v}} + 1\\
+    d &= \floor{\frac{hf \bmod l}{v}} + 1\\
     b_v &= dv - hf \\
     b_f &= df - hv \\
     B &= b_v G + b_f H
@@ -251,7 +252,7 @@ Let's summarize the whole scheme.
 Verifiers on the network check the PoS block as follows:
 
 \begin{enumerate}
-    \item $d \leq \floor{\frac{l}{D}}$
+    \item $0 < d \leq \floor{\frac{l}{D}}$
     
     \item Check Schnorr-like signature $(c, y_0, y_1)$ for $A'$.
     
@@ -359,7 +360,7 @@ Then she continues as follows:
 Verifiers on the network check the PoS block as follows:
 
 \begin{enumerate}
-    \item $d \leq \floor{\frac{l}{D}}$
+    \item $0 < d \leq \floor{\frac{l}{D}}$
     
     \item Calculate $h$ and check $h A'_i - d A_i + B_i = \mathbf{0}$
     
