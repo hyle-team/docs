@@ -69,7 +69,7 @@
     \textsuperscript{2}Independent researcher, \texttt{ukoe@protonmail.com}
 }}
 
-\date{\small{March 2022\footnote{Version 4.6. Last update: 2022-03-03. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
+\date{\small{March 2022\footnote{Version 4.7. Last update: 2022-03-04. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
 
 
 \begin{document}
@@ -430,6 +430,10 @@ Additionally, we need to store 9 elements in $\mathbb{Z}_l$ ($d, c, y_0, \dots, 
 In total we have $19$ group elements and $2n + 12$ field elements. If both field and group elements have a compressed size of 32 bytes, which is the case for Ed25519 used in Zano, then the total size of additional PoS data can be estimated as $2n + 31$ elements per PoS signature and $1$ element per output, or $64n + 992$ bytes per PoS signature and $32$ bytes per output.
 
 If the sender-recipient anonymity is ensured by other means and the protocol is simplified as explained in subsection \ref{ss_no_sender_anonymity_optimization}, the total size of additional data is 19 group elements and $n + 12$ field elements per PoS block. Or, in case of Ed25519, the total size is $n + 31$ elements or $32n + 992$ per PoS block.
+
+\section*{Acknowledgment}
+The authors would like to thank Cypher Stack and Aaron Feickert (Sarang Noether) for reviewing this work (\cite{zarcanum_cypher_stack_review}), for valuable comments, and especially for providing rigor security proofs for subprotocols. 
+
 %\bibliographystyle{unsrtnat}
 %\bibliography{references}
 \printbibliography
