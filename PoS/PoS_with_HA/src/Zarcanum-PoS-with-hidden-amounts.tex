@@ -61,7 +61,7 @@
 \captionsetup[figure]{labelfont={bf},name={Fig.},labelsep=period}
 \numberwithin{figure}{section}
 
-\title{\huge{\textbf{Zarcanum: A Proof-of-Stake Scheme for Confidential Transactions with Hidden Amounts \hl{(updated, draft)}}}}
+\title{\huge{\textbf{Zarcanum: A Proof-of-Stake Scheme for Confidential Transactions with Hidden Amounts}}}
 
 \author{\large{sowle}\textsuperscript{1}, \large{koe}\textsuperscript{2}}
 \affil{\small{
@@ -69,7 +69,7 @@
     \textsuperscript{2}Independent researcher, \texttt{ukoe@protonmail.com}
 }}
 
-\date{\small{March 2022\footnote{Version 4.7. Last update: 2022-03-04. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
+\date{\small{March 2022\footnote{Version 4.8. Last update: 2022-03-15. Check \href{https://github.com/hyle-team/docs/tree/master/PoS/PoS_with_HA}{here} for the latest version.}}}
 
 
 \begin{document}
@@ -78,7 +78,7 @@
 \begin{abstract}
 This article explores a Proof-of-Stake mining algorithm in an environment where amounts are hidden with homomorphic commitments, in particular, using confidential transactions. Our goal was to avoid revealing amounts and other sensitive information (like which output was used to stake a given block) to blockchain observers when doing staking.
 
-Our contribution is a Proof-of-Stake mining scheme that does not reveal amounts and is compatible with ring confidential transactions. Also we present a double-blinded commitments extension for Bulletproofs+ range proof protocol with the corresponding security statements.
+Our contribution is a Proof-of-Stake mining scheme that does not reveal amounts and is compatible with ring confidential transactions. We also present an extension to the Bulletproofs+ protocol that allows range proofs on double-blinded commitments, with corresponding security statements.
 \end{abstract}
 
 \section{Notation}
@@ -231,7 +231,7 @@ where $\mathbf{0}$ is the identity element of $\mathbb{G}$.
 
 Now to satisfy range requirements in \eqref{eq_main_eq}, Alice needs to reveal $d$ and $A'$, prove that $A'$ is the mirror commitment of $A$, and provide a range proof for $B$ (i.e.\ show that $b_a < 2^{64}$).
 
-Proving the correctness of $A'$ can be done by using mirror commitment proof as shown in Appendix \ref{ss_mirror_commitment_proof}.
+Proving the correctness of $A'$ can be done with a mirror commitment proof as shown in Appendix \ref{ss_mirror_commitment_proof}.
 
 This approach satisfies stake proportionality, resistantness, and amount privacy from (\ref{s_criteria}), but the criteria of sender-recipient anonymity and untraceability are not met.
 
@@ -316,13 +316,13 @@ Let us consider these steps in detail.
 \begin{enumerate}
     \item Assume the correctness of $C$ is proven by modification of the ring signature (see above).
     
-    \item For proving $C' = x'X + (f + q)H + aG$ we use extended mirror commitment proof, described in Appendix \ref{ss_extended_mirror_commitment_proof}.
+    \item For proving $C' = x'X + (f + q)H + aG$ we use an extended mirror commitment proof, as described in Appendix \ref{ss_extended_mirror_commitment_proof}.
     
-    \item A range proof for $b_a < 2^{64}$ committed to in $E = b_a H + b_f G + b_x X$ can be done directly by extending an existing range proof protocol, like Bulletproofs+\cite{BP+}, to support two blinding factors in commitments. We provide such extension for Bulletproofs+ in Appendix \ref{s_bpp}.
+    \item A range proof for $b_a < 2^{64}$ committed to in $E = b_a H + b_f G + b_x X$ can be done directly by extending an existing range proof protocol like Bulletproofs+\cite{BP+} to support two blinding factors in commitments. We provide such an extension for Bulletproofs+ in Appendix \ref{s_bpp}.
     
-    However, this can be achieved using a standard range proof if Alice provides a range proof for commitment $B = b_a H + e G$ on value $b_a$, where $e \stackrel{\$}{\leftarrow} \mathbb{Z}_l$, and also proves that $B$ and $E$ are commitments to the same value $b_a$. The latter can be accomplished by proving that
+    However, this can also be achieved using a standard range proof if Alice provides a range proof for commitment $B = b_a H + e G$ on value $b_a$, where $e \stackrel{\$}{\leftarrow} \mathbb{Z}_l$, and also proves that $B$ and $E$ are commitments to the same value $b_a$. The latter can be accomplished by proving that
     \[ E - B = k_0 G + k_1 X\]
-    for some $k_0, k_1$ using linear composition proof (\ref{ss_linear_comp_proof}). Indeed: $k_0 = b_f - e$, $k_1 = b_x$.
+    for some $k_0, k_1$ using a linear composition proof (\ref{ss_linear_comp_proof}). Indeed: $k_0 = b_f - e$, $k_1 = b_x$.
 \end{enumerate}
 
 Note that, if Alice needs to spend her stake output $u$ in the same transaction, which is the case for the PoS protocol used in Zano, she can construct a pseudo output commitment $W = aH + wG$ to the same value $a$ (with $w \stackrel{\$}{\leftarrow} \mathbb{Z}_l$) and provide a linear composition proof for the fact that $C - W = k_0 G + k_1 X$ for some $k_0$ and $k_1$.\footnote{Such a linear composition proof would only show that $W = a H + n_1 G + n_2 X$, where $n_1, n_2 \geq 0$. It is acceptable for $n_2 > 0$ to be true, because any amount balance proof involving $W$ would have to show that $a$ on generator $H$ is canceled out by any new amounts (in the case of a PoS mining transaction, the block reward plus staked output's amount), regardless of statements about values attached to other generators. In practice, setting $n_2 > 0$ may be either impossible (incompatible with balance proofs) or cause new outputs to be unspendable (incompatible with range proofs).}
@@ -373,11 +373,10 @@ Let's summarize the whole PoS mining process.
     \end{equation}
     Note that all the discrete logarithm proofs can share a Fiat-Shamir challenge $c$.
     
-    Also note, that using a range proof protocol with double-blinded commitments (like described in Appendix \ref{s_bpp}) allows to get rid of $B, y_5, y_6$ and makes PoS signature $\sigma$ more compact:
+    Also note that using a range proof protocol with double-blinded commitments (like described in Appendix \ref{s_bpp}) allows us to get rid of $B, y_5, y_6$, which makes the PoS signature $\sigma$ more compact:
     \[
         \sigma = \{ d, C, C', E, (c, y_0, y_1, y_2, y_3, y_4), \mathcal{R}^e_B \}
     \]
-    
 \end{enumerate}
 
 \subsection{Verification of ring-friendly PoS scheme} \label{s_verification_ring_friendly}
@@ -432,7 +431,7 @@ In total we have $19$ group elements and $2n + 12$ field elements. If both field
 If the sender-recipient anonymity is ensured by other means and the protocol is simplified as explained in subsection \ref{ss_no_sender_anonymity_optimization}, the total size of additional data is 19 group elements and $n + 12$ field elements per PoS block. Or, in case of Ed25519, the total size is $n + 31$ elements or $32n + 992$ per PoS block.
 
 \section*{Acknowledgment}
-The authors would like to thank Cypher Stack and Aaron Feickert (Sarang Noether) for reviewing this work (\cite{zarcanum_cypher_stack_review}), for valuable comments, and especially for providing rigor security proofs for subprotocols. 
+The authors would like to thank Cypher Stack and Aaron Feickert (Sarang Noether) for reviewing this work (\cite{zarcanum_cypher_stack_review}), for valuable comments, and especially for providing rigorous security proofs for the sub-protocols in this paper.
 
 %\bibliographystyle{unsrtnat}
 %\bibliography{references}
@@ -447,7 +446,7 @@ The authors would like to thank Cypher Stack and Aaron Feickert (Sarang Noether)
 \section{Basic proofs}
 \subsection{Mirror commitment proof} \label{ss_mirror_commitment_proof}
 
-Suppose Prover ($\mathcal{P}$) needs to convince a Verifier ($\mathcal{V}$) that $A' = fH + aG$ is the mirror commitment of public $A = aH + fG$ without revealing $a$ and $f$. We can construct a Schnorr-like proof as follows.
+Suppose Prover ($\mathcal{P}$) needs to convince a Verifier ($\mathcal{V}$) that $A' = fH + aG$ is the mirror commitment of public $A = aH + fG$ without revealing $a$ or $f$. We can construct a Schnorr-like proof as follows.
 
 \begin{theorem}
 Let $\mathbb{G}$ be a finite cyclic group where the discrete logarithm problem is hard, and let $\mathbb{F}$ be its scalar field. Let $0 \neq G, H \in \mathbb{G}$ be group elements with no efficiently-computable discrete logarithm relation. We assume that $\mathbb{G}, G, H$ are implicit public parameters where needed. The protocol presented in Fig. \ref{f_mirror_comm_proof_proto} is complete, special sound, and special honest-verifier zero knowledge as a sigma protocol for the relation $\mathcal{R}_1$.
@@ -509,12 +508,12 @@ and
 \[ f = \frac{\alpha_0  - \alpha_1}{2} \]
 as the extracted witnesses, and the protocol is 2-special sound. Observe that $a$, $f$ must be unique, or this implies a nontrivial discrete logarithm relationship between $G, H$.
 
-We finally show that the protocol is special honest-verifier zero knowledge. To do so, we define a simulator that, on a valid statement and uniformly sampled verifier challenge, produces transcripts indistinguishable from those of real proofs. Fix a valid prover statement $(A, A')$, and sample a nonzero challenge $c \in \mathbb{F}$. The simulator samples random $y_0, y_1 \in \mathbb{F}$ and defines $R_0, R_1$ using Equations \eqref{eq_mirror_comm_proof_v1} and \eqref{eq_mirror_comm_proof_v2}, respectively. The resulting simulated proof will be accepted by an honest verifier. Because $G, H$ are independent generators, such a simulated proof is distributed identically to a real proof, and hence the protocol is special honest-verifier zero knowledge.
+We finally show that the protocol is special honest-verifier zero knowledge. To do so, we define a simulator that, on a valid statement and uniformly sampled verifier challenge, produces transcripts indistinguishable from those of real proofs. Fix a valid prover statement $(A, A')$ and sample a nonzero challenge $c \in \mathbb{F}$. The simulator samples random $y_0, y_1 \in \mathbb{F}$ and defines $R_0, R_1$ using Equations \eqref{eq_mirror_comm_proof_v1} and \eqref{eq_mirror_comm_proof_v2}, respectively. The resulting simulated proof will be accepted by an honest verifier. Because $G, H$ are independent generators, such a simulated proof is distributed identically to a real proof, and hence the protocol is special honest-verifier zero knowledge.
 
 This completes the proof.
 \end{proof}
 
-This protocol may be made non-interactive via the Fiat-Shamir technique, where the verifier challenge is replaced by a suitable transcript hash. This technique further allows for binding arbitrary proof context into the transcript. In Fig. \ref{f_mirror_comm_proof_ni_proto} such non-interactive protocol is shown as an example.
+This protocol may be made non-interactive via the Fiat-Shamir technique, where the verifier challenge is replaced by a suitable transcript hash. This technique further allows for binding an arbitrary proof context into the transcript. Fig. \ref{f_mirror_comm_proof_ni_proto} shows an example non-interactive protocol.
 \begin{figure}[!ht] % h! -- here
 \centering
 \begin{tabularx}{0.8\textwidth}
@@ -530,7 +529,7 @@ This protocol may be made non-interactive via the Fiat-Shamir technique, where t
     $ \qquad c = H_s(R_0, R_1, A', A)$ \\
     $ \qquad y_0 = r_0 + c(a+f),\ y_1 = r_1 + c(a-f)$ \\
     $\boxed{\mathcal{P} \rightarrow \mathcal{V}}:(c, y_0, y_1)$ \\
-    $\boxed{\mathcal{V}}$: accepts if and only if the following hold: \\
+    $\boxed{\mathcal{V}}$: accepts if and only if the following holds: \\
     $ \qquad c \stackrel{?}{=} H_s(y_0(H+G)-c(A+A'),\ y_1(H-G)-c(A-A'),\ A',\ A) $ \\
     \hline
 \end{tabularx}
@@ -543,10 +542,10 @@ This protocol may be made non-interactive via the Fiat-Shamir technique, where t
 
 \subsection{Extended mirror commitment proof} \label{ss_extended_mirror_commitment_proof}
 
-Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) that $C' = fH + aG + x'X$ while $C = aH + fG + xX$ is publicly known, $G, H, X \in \mathbb{G}$ are generators without nontrivial DL relations, and scalars $a, f, x, x'$ should not be revealed. For this purpose, we make the following construction.
+Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) that $C' = fH + aG + x'X$ is a blinded mirror commitment to $C = aH + fG + xX$ which is publicly known. We assume there are no known nontrivial DL relations between generators $G, H, X \in \mathbb{G}$, and expect that scalars $a, f, x, x'$ and un-blinded commitments $C'_u = f H + a G$ and $C_u = a H + f G$ should not be revealed. For this purpose, we make the following construction.
 
 \begin{theorem}
-    Let $\mathbb{G}$ be a finite cyclic group where the discrete logarithm problem is hard, and let $\mathbb{F}$ be its scalar field. Let $0 \neq G, H, X \in \mathbb{G}$ be group elements with no efficiently-computable discrete logarithm relation. We assume that $\mathbb{G}, G, H, X$ are implicit public parameters where needed. The protocol presented in Fig. \ref{f_ex_mirror_comm_proof_proto} is complete, special sound, and special honest-verifier zero knowledge as a sigma protocol for the relation $\mathcal{R}_2$.
+    Let $\mathbb{G}$ be a finite cyclic group where the discrete logarithm problem is hard and let $\mathbb{F}$ be its scalar field. Let $0 \neq G, H, X \in \mathbb{G}$ be group elements with no efficiently-computable discrete logarithm relation. We assume that $\mathbb{G}, G, H, X$ are implicit public parameters where needed. The protocol presented in Fig. \ref{f_ex_mirror_comm_proof_proto} is complete, special sound, and special honest-verifier zero knowledge as a sigma protocol for the relation $\mathcal{R}_2$.
 \end{theorem}
 
 \begin{figure}[!ht] % h! -- here
@@ -586,7 +585,7 @@ Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) th
     Completeness follows trivially by inspection.
 
 	We next show that the protocol is $2$-special sound by a standard rewinding argument, where we define an extractor that produces valid witness elements on accepting transcripts using distinct verifier challenges.
-	Fix an initial transcript $(C,C',R_0,R_1)$, and let $c \neq c'$ be distinct verifier challenges for this transcript, with corresponding responses $(y_0,y_1,z_0,z_1)$ and $(y_0',y_1',z_0',z_1')$.
+	Fix an initial transcript $(C,C',R_0,R_1)$ and let $c \neq c'$ be distinct verifier challenges for this transcript, with corresponding responses $(y_0,y_1,z_0,z_1)$ and $(y_0',y_1',z_0',z_1')$.
 	We apply Equations \eqref{e_ex_mirror_comm_proof_1} and \eqref{e_ex_mirror_comm_proof_2} to these transcripts to obtain
 	\begin{align}
 		(y_0 - y_0')(H + G) + (z_0 - z_0')X - (c - c')(C + C') &= 0 \\
@@ -630,7 +629,7 @@ Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) th
 	This completes the proof.
 \end{proof}
 
-As above, this protocol may be made non-interactive via the Fiat-Shamir technique, where the verifier challenge is replaced by a suitable transcript hash. In Fig. \ref{f_ex_mirror_comm_proof_ni_proto} such non-interactive protocol is shown as an example.
+As above, this protocol may be made non-interactive via the Fiat-Shamir technique, where the verifier challenge is replaced by a suitable transcript hash. In Fig. \ref{f_ex_mirror_comm_proof_ni_proto} such a non-interactive protocol is shown as an example.
 \begin{figure}[!ht] % h! -- here
 \centering
 \begin{tabularx}{0.85\textwidth}
@@ -645,7 +644,7 @@ As above, this protocol may be made non-interactive via the Fiat-Shamir techniqu
     $ \qquad c = H_s(R_0, R_1, C, C')$ \\
     $ \qquad y_0 = r_0 + c(a+f),\ y_1 = r_1 + c(a-f),\ z_0 = s_0 + c(x+x'),\ z_1 = s_1 + c(x-x')$ \\
     $\boxed{\mathcal{P} \rightarrow \mathcal{V}}:(c, y_0, y_1, z_0, z_1)$ \\
-    $\boxed{\mathcal{V}}$: accepts if and only if the following hold: \\
+    $\boxed{\mathcal{V}}$: accepts if and only if the following holds: \\
     $ \qquad c \stackrel{?}{=} H_s(y_0(H+G)+z_0X-c(C+C'),\ y_1(H-G)+z_1X-c(C-C'),\ C,\ C') $ \\
     \hline
 \end{tabularx}
@@ -658,7 +657,7 @@ As above, this protocol may be made non-interactive via the Fiat-Shamir techniqu
 \newpage
 \subsection{Linear composition proof} \label{ss_linear_comp_proof}
 
-Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) that $C = aA + bB$, where $A, B \in \mathbb{G}$ are generators without nontrivial DL relations, and scalars $a, b \in \mathbb{Z}_l$ should not be revealed. For this purpose, we can construct a Schnorr-like proof as follows.
+Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) that $C = aA + bB$, where $A, B \in \mathbb{G}$ are generators with no known nontrivial DL relations, and scalars $a, b \in \mathbb{Z}_l$ should not be revealed. For this purpose, we can construct a Schnorr-like proof as follows.
 
 \begin{theorem}
     Let $\mathbb{G}$ be a finite cyclic group where the discrete logarithm problem is hard, and let $\mathbb{F}$ be its scalar field. Let $0 \neq A,B \in \mathbb{G}$ be group elements with no efficiently-computable discrete logarithm relation. We assume that $\mathbb{G},A,B$ are implicit public parameters where needed. The protocol presented in Fig. \ref{f_linear_comp_proof_proto} is complete, special sound, and special honest-verifier zero knowledge as a sigma protocol for the relation $\mathcal{R}_3$.
@@ -705,9 +704,9 @@ Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) th
 	Define $$a = \frac{y_0 - y_0'}{c - c'}$$ and $$b = \frac{y_1 - y_1'}{c - c'}$$ as the extracted witnesses, which are well defined since $c \neq c'$, and the protocol is $2$-special sound.
 	Observe that $a,b$ must be unique, or this implies a nontrivial discrete logarithm relationship between $A,B$.
 
-	We finally show that the protocol is special honest-verifier zero knowledge.
+	Finally, we show that the protocol is special honest-verifier zero knowledge.
 	To do so, we define a simulator that, on a valid statement and uniformly-sampled verifier challenge, produces transcripts indistinguishable from those of real proofs.
-	Fix a valid prover statement $C$, and sample a nonzero challenge $c \in \mathbb{F}$.
+	Fix a valid prover statement $C$ and sample a nonzero challenge $c \in \mathbb{F}$.
 	The simulator samples random $y_0,y_1 \in \mathbb{F}$ and defines $R$ using Equation \eqref{e_linear_comp_proof_check_eq},
 	The resulting simulated proof will be accepted by an honest verifier.
 	Because $A,B$ are independent generators, such a simulated proof is distributed identically to a real proof, and hence the protocol is special honest-verifier zero knowledge.
@@ -715,7 +714,7 @@ Suppose a prover ($\mathcal{P}$) needs to convince a verifier ($\mathcal{V}$) th
 	This completes the proof.
 \end{proof}
 
-This protocol may be made non-interactive via the Fiat-Shamir technique, where the verifier challenge is replaced by a suitable transcript hash. This technique further allows for binding arbitrary proof context into the transcript. In Fig. \ref{f_linear_comp_proof_ni_proto} such non-interactive protocol is shown as an example.
+This protocol may be made non-interactive via the Fiat-Shamir technique, where the verifier challenge is replaced by a suitable transcript hash. This technique further allows for binding arbitrary proof context into the transcript. In Fig. \ref{f_linear_comp_proof_ni_proto} such a non-interactive protocol is shown as an example.
 \begin{figure}[!ht] % h! -- here
 \centering
 \begin{tabularx}{0.8\textwidth}
@@ -875,30 +874,30 @@ A brute force attack in this case would only reveal secret key $t$, which is not
 
 
 \newpage
-\section{Bulletproof+ with double-blinded commitments} \label{s_bpp}
+\section{Bulletproofs+ with double-blinded commitments} \label{s_bpp}
 
 \subsection{Introduction}
 
-The original Bulletproofs+\cite{BP+} uses the following group-based range relation\footnote{For clarity, we use original notation from Bulletproof+\cite{BP+} paper throughout the entire section.}:
+The original Bulletproofs+ protocol \cite{BP+} uses the following group-based range relation\footnote{For clarity, we use original notation from the Bulletproofs+ \cite{BP+} paper throughout this entire appendix.}:
 \[
     \{ (\bm{g}, \bm{h} \in \mathbb{G}^n,\ g, h, V \in \mathbb{G},\ v, \gamma \in \mathbb{Z}_p): V = g^v h^\gamma \; \wedge \; v \in [0, 2^n - 1] \}
 \]
-\noindent which is only compatible with single-blinded commitments in form $V = g^v h^\gamma$. Below we extend Bulletproofs+ protocol for double-blinded commitments using group-based range relation as follows:
+\noindent which is only compatible with single-blinded commitments of the form $V = g^v h^\gamma$. Below we extend the Bulletproofs+ protocol to support double-blinded commitments using a group-based range relation as follows:
 \[
     \{ (\bm{g}, \bm{h} \in \mathbb{G}^n,\ g, h_1, h_2, V \in \mathbb{G},\ v, \gamma_1, \gamma_2 \in \mathbb{Z}_p): V = g^v h_1^{\gamma_1} h_2^{\gamma_2} \; \wedge \; v \in [0, 2^n - 1] \}
 \]
 \noindent
-Instead of a single blinding mask generator $h$ we introduce two generators $h_1, h_2 \in \mathbb{G}$ and corresponding blinding masks $\gamma_1, \gamma_2 \in \mathbb{Z}_p$. It is assumed that discrete logarithm relation is unknown for all used generators.
+Instead of a single blinding mask generator $h$ we introduce two generators $h_1, h_2 \in \mathbb{G}$ and corresponding blinding masks $\gamma_1, \gamma_2 \in \mathbb{Z}_p$. It is assumed the discrete logarithm relation is unknown for all used generators.
 
-\subsection{Zero knowledge argument for weighted inner product relation}
+\subsection{Zero knowledge argument for weighted inner product (WIP) relation}
 
-WIP agrument protocol with double-blinded commitments support is shown on Fig. \ref{f_wip}. We provide the security statement for the proposed updated zk-WIP protocol in Theorem \ref{th_bpp_wip}. The proof of Theorem \ref{th_bpp_wip} mostly corresponds to the original proof in Bulletproofs+ paper\cite{BP+}. For reader's convenience all changes are highlighted.
+A WIP agrument protocol with double-blinded commitments support is shown in Fig. \ref{f_wip}. We provide the security statement for the proposed updated zk-WIP protocol in Theorem \ref{th_bpp_wip}. The proof of Theorem \ref{th_bpp_wip} mostly corresponds to the original proof in Bulletproofs+ paper \cite{BP+}. For the reader's convenience all changes are highlighted.
 
 \vspace{10pt}
 
 \begin{theorem}
 \label{th_bpp_wip}
-Let $y$ be a constant in $\mathbb{Z}_p^*$. The zero-knowledge argument for WIP presented in Fig.\ref{f_wip} has perfect completeness, perfect honest verifier zero-knowledge and computational witness-extended emulation.
+Let $y$ be a constant in $\mathbb{Z}_p^*$. The zero-knowledge argument for WIP presented in Fig.\ref{f_wip} has perfect completeness, perfect honest verifier zero-knowledge, and computational witness-extended emulation.
 \end{theorem}
 
 
@@ -1047,7 +1046,7 @@ Let $y$ be a constant in $\mathbb{Z}_p^*$. The zero-knowledge argument for WIP p
 
 \begin{proof}
 \textit{(perfect completeness)} We show that the WIP argument has perfect completeness.
-First, we assume that $P = \bm{g}^{\bm{a}} \bm{h}^{\bm{b}} g^{\bm{a} \odot_y \bm{b}} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}} $ and show that the case $n = 1$ satisfies the perfect completeness. That is, we show that the verification equation holds. It is sufficient to show that the corresponding \hl{five} equations with bases $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$, respectively, \hlg{hold}.
+First, we assume that $P = \bm{g}^{\bm{a}} \bm{h}^{\bm{b}} g^{\bm{a} \odot_y \bm{b}} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}} $ and show that the case $n = 1$ satisfies perfect completeness. That is, we show that the verification equation holds. It is sufficient to show that the following \hl{five} equalities hold (corresponding to bases $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$).
 \[
 \begin{aligned}
     \bm{a}e^2 + re &= (\bm{a}e + r)e = r'e &\in \mathbb{Z}_p \\
@@ -1060,10 +1059,10 @@ First, we assume that $P = \bm{g}^{\bm{a}} \bm{h}^{\bm{b}} g^{\bm{a} \odot_y \bm
 \noindent
 From the above \hl{five} equalities, the perfect completeness for the case $n = 1$ is proven.
 
-Next, we move to the case $n > 1$. For every end of recursive step, if the parameters
-$(\widehat{\bm{g}}, \widehat{\bm{h}}, g,\allowbreak \mhl{h_1, h_2},\allowbreak \widehat{P}; \widehat{\bm{a}}, \widehat{\bm{b}}, \mhl{\widehat{\alpha}_1, \widehat{\alpha}_2})$ that will be used for the next call satisfy the relation $\widehat{P} = \widehat{\bm{g}}^{\widehat{\bm{a}}} \widehat{\bm{h}}^{\widehat{\bm{b}}} g^{\widehat{\bm{a}} \odot_y \widehat{\bm{b}}} \mhl{h_1^{\widehat{\alpha}_1} h_2^{\widehat{\alpha}_2}}$ when $P = \bm{g}^{\bm{a}} \bm{h}^{\bm{b}} g^{\bm{a} \odot_y \bm{b}} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}} $ then we can be sure that the protocol will drive to end up with a correct input for the last step of $n = 1$. Therefore we show that if the input $P$ is of the form $\bm{g}^{\bm{a}} \bm{h}^{\bm{b}} g^{\bm{a} \odot_y \bm{b}} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}}$ and $\widehat{P}, \widehat{\bm{g}}, \widehat{\bm{h}}, \widehat{\bm{a}}, \widehat{\bm{b}}$ are computed as the protocol, then $\widehat{P}$ has the desired form $\widehat{\bm{g}}^{\widehat{\bm{a}}} \widehat{\bm{h}}^{\widehat{\bm{b}}} g^{\widehat{\bm{a}} \odot_y \widehat{\bm{b}}} \mhl{h_1^{\widehat{\alpha}_1} h_2^{\widehat{\alpha}_2}}$.
+Next, we move to the case $n > 1$. At the end of every recursion, if the parameters
+$(\widehat{\bm{g}}, \widehat{\bm{h}}, g,\allowbreak \mhl{h_1, h_2},\allowbreak \widehat{P}; \widehat{\bm{a}}, \widehat{\bm{b}}, \mhl{\widehat{\alpha}_1, \widehat{\alpha}_2})$ that will be used for the next call satisfy the relation $\widehat{P} = \widehat{\bm{g}}^{\widehat{\bm{a}}} \widehat{\bm{h}}^{\widehat{\bm{b}}} g^{\widehat{\bm{a}} \odot_y \widehat{\bm{b}}} \mhl{h_1^{\widehat{\alpha}_1} h_2^{\widehat{\alpha}_2}}$ when $P = \bm{g}^{\bm{a}} \bm{h}^{\bm{b}} g^{\bm{a} \odot_y \bm{b}} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}} $, then we can be sure that the protocol will end up with a correct input for the last step of $n = 1$. Therefore we show that if the input $P$ is of the form $\bm{g}^{\bm{a}} \bm{h}^{\bm{b}} g^{\bm{a} \odot_y \bm{b}} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}}$ and $\widehat{P}, \widehat{\bm{g}}, \widehat{\bm{h}}, \widehat{\bm{a}}, \widehat{\bm{b}}$ are computed as in the protocol, then $\widehat{P}$ has the desired form $\widehat{\bm{g}}^{\widehat{\bm{a}}} \widehat{\bm{h}}^{\widehat{\bm{b}}} g^{\widehat{\bm{a}} \odot_y \widehat{\bm{b}}} \mhl{h_1^{\widehat{\alpha}_1} h_2^{\widehat{\alpha}_2}}$.
 
-Let $P, \widehat{P}, \widehat{\bm{g}}, \widehat{\bm{h}}, \widehat{\bm{a}}, \widehat{\bm{b}}$ be the form in the protocol description for the case $n > 1$. If $L$ and $R$ are computed as the description of the protocol, then $\widehat{P}$ is computed by $\widehat{P} = L^{e^2} P R^{e^{-2}}$ and we can write $\widehat{P}$ according to the corresponding bases.
+Let $P, \widehat{P}, \widehat{\bm{g}}, \widehat{\bm{h}}, \widehat{\bm{a}}, \widehat{\bm{b}}$ be the form in the protocol description for the case $n > 1$. If $L$ and $R$ are computed as described in the protocol, then $\widehat{P}$ is computed as $\widehat{P} = L^{e^2} P R^{e^{-2}}$ and we can write $\widehat{P}$ according to the corresponding bases.
 
 \[
 \begin{aligned}
@@ -1110,21 +1109,21 @@ which is equal to the g-base exponent of $\widehat{P}$. Using the above observat
 \end{aligned}
 \]
 \noindent
-This completes the proof of the perfect completeness.
+This completes the proof of perfect completeness.
 
 \noindent
-\textit{(perfect SHVZK)} To prove the argument system is perfect special honest verifier zero-knowledge, we construct a simulator, given only the public input, it outputs a simulated transcript that is identical to the valid transcript produced by the prover and verifier in the real interaction.
+\textit{(perfect SHVZK)} To prove the argument system is perfect special honest verifier zero-knowledge, we construct a simulator which, given only the public input, outputs a simulated transcript that is identical to the valid transcript produced by the prover and verifier in the real interaction.
 
-We first describe our simulator construction, and then analyze it. The simulator begins with taking the statement and the randomness $\rho$ of the verifier as input. Using $\rho$, the simulator can generates all challenges whose distribution is identical to that of the real argument. We describe how the simulator generates a non-challenge part. For each $n > 1$, the simulator chooses two random group elements and set those $L_n, R_n$. For the case of $n = 1$, the simulator chooses $A_s \xleftarrow{\$} \mathbb{G}$ and $r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}} \xleftarrow{\$} \mathbb{Z}_p$ at random and computes
+We first describe our simulator construction, and then analyze it. The simulator begins with taking the statement and the randomness $\rho$ of the verifier as input. Using $\rho$, the simulator can generate all challenges whose distribution is identical to that of the real argument. We describe how the simulator generates the non-challenge part. For each $n > 1$, the simulator chooses two random group elements to be $L_n, R_n$. For the case of $n = 1$, the simulator chooses $A_s \xleftarrow{\$} \mathbb{G}$ and $r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}} \xleftarrow{\$} \mathbb{Z}_p$ at random and computes
 \[
     B_s = (P^{e^2} A^e \bm{g}^{-r'_s \cdot e} \bm{h}^{-s'_s \cdot e} g^{-r'_s \odot_y s'_s} \mhl{h_1^{-\delta'_{1,s}} h_2^{-\delta'_{2,s}}})^{-1} \quad \in \mathbb{G}.
 \]
-Next, we analyze the distribution of the simulated transcript for the non-challenge part $(\{(L_i, R_i)\}_i,\allowbreak A_s, B_s, r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}})$. In the protocol description, $\forall i, (L_i, R_i)$ distributes uniformly and independently due to blinding factors \hl{$d'_{L_i}, d'_{R_i}, d''_{L_i}$, and $d''_{R_i}$} and all $(L_i, R_i)$'s contribute to generate $P$ used in the case $n = 1$. The simulator generates uniformly $(L_i, R_i)$'s at random, so that its' distribution is identical to that of the real argument. From now, we analyze the distribution of $(A_s, B_s, r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}})$ for given $P$ in the case $n = 1$.
+Next, we analyze the distribution of the simulated transcript for the non-challenge part $(\{(L_i, R_i)\}_i,\allowbreak A_s, B_s, r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}})$. In the protocol description, $\forall i, (L_i, R_i)$ are distributed uniformly and independently due to blinding factors \hl{$d'_{L_i}, d'_{R_i}, d''_{L_i}$, and $d''_{R_i}$}, and all $(L_i, R_i)$ contribute to generate the point $P$ used in the case $n = 1$. The simulator generates all $(L_i, R_i)$ uniformly at random so that their distributions are identical to that of the real argument. From now, we analyze the distribution of $(A_s, B_s, r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}})$ for a given $P$ in the case $n = 1$.
 \newpage
-Before analyzing the simulated transcript $(A_s, B_s, r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}})$, we first analyze the real transcript $(A, B, r', s', \mhl{\delta'_1, \delta'_2})$ and then show two distributions are identical.
+Before analyzing the simulated transcript $(A_s, B_s, r'_s, s'_s, \mhl{\delta'_{1,s}, \delta'_{2,s}})$, we first analyze the real transcript $(A, B, r', s', \mhl{\delta'_1, \delta'_2})$ and then show the two distributions are identical.
 % new proof
 
-Here, we focus on $(A, r', s', \mhl{\delta'_1, \delta'_2})$ and claim that it is uniformly distributed in \hl{$\mathbb{G} \times \mathbb{Z}_p^4$} when \hl{$(r, s, \delta_1, \delta_2, \eta_1, \eta_2)$} in uniformly distributed in \hl{$\mathbb{Z}_p^6$}. To this end, it is sufficient to prove the following claim.
+Here, we focus on $(A, r', s', \mhl{\delta'_1, \delta'_2})$ and claim that it is uniformly distributed in \hl{$\mathbb{G} \times \mathbb{Z}_p^4$} when \hl{$(r, s, \delta_1, \delta_2, \eta_1, \eta_2)$} is uniformly distributed in \hl{$\mathbb{Z}_p^6$}. To this end, it is sufficient to prove the following claim.
 
 \begin{claim}\hl{
     \textit{There exists a one-to-one correspondence between $(r, s, \delta_1, \delta_2, \eta_1, \eta_2)$ and $(A, r', s', \delta'_1, \delta'_2)$.}
@@ -1151,7 +1150,7 @@ Here, we focus on $(A, r', s', \mhl{\delta'_1, \delta'_2})$ and claim that it is
         \quad \in \mathbb{G} \times \mathbb{Z}_P^4
     }\]
     \noindent
-    \hl{Assume that there is another tuple $(\tilde{r}, \tilde{s}, \tilde{\delta_1}, \tilde{\delta_2}, \tilde{\eta_1}, \tilde{\eta_2}) \neq (r, s, \delta_1, \delta_2, \eta_1, \eta_2)$ which image via the above function is also $(A, r', s', \delta'_1, \delta'_2)$. Then, comparing two function values we obtain}
+    \hl{Assume that there is another tuple $(\tilde{r}, \tilde{s}, \tilde{\delta_1}, \tilde{\delta_2}, \tilde{\eta_1}, \tilde{\eta_2}) \neq (r, s, \delta_1, \delta_2, \eta_1, \eta_2)$ whose image via the above function is also $(A, r', s', \delta'_1, \delta'_2)$. Then, comparing the two function values we obtain}
     \[\mhl{
         \begin{pmatrix}
             \bm{g}^r \bm{h}^s g^{r \odot_y \bm{b} + s \odot_y \bm{a}} h_1^{\delta_1} h_2^{\delta_2} \\
@@ -1170,7 +1169,7 @@ Here, we focus on $(A, r', s', \mhl{\delta'_1, \delta'_2})$ and claim that it is
         \end{pmatrix}
     }\]
     \noindent
-    \hl{From the second and third rows we get $r = \tilde{r}$ and $s = \tilde{s}$. Using it, from the first one we obtain:}
+    \hl{From the second and third rows we get $r = \tilde{r}$ and $s = \tilde{s}$. This lets us simplify the first row:}
     \[\mhl{\begin{aligned}
         \bm{g}^r \bm{h}^s g^{r \odot_y \bm{b} + s \odot_y \bm{a}} h_1^{\delta_1} h_2^{\delta_2} \cdot (\bm{g}^{\tilde{r}} \bm{h}^{\tilde{s}} g^{\tilde{r} \odot_y \bm{b} + \tilde{s} \odot_y \bm{a}} h_1^{\tilde{\delta_1}} h_2^{\tilde{\delta_2}})^{-1} &= 1_\mathbb{G} \Rightarrow \\
         h_1^{\delta_1 - \tilde{\delta_1}} h_2^{\delta_2 - \tilde{\delta_2}} &= 1_\mathbb{G}
@@ -1190,15 +1189,15 @@ Here, we focus on $(A, r', s', \mhl{\delta'_1, \delta'_2})$ and claim that it is
     \hl{This contradiction concludes the proof of the claim.}
 \end{claimproof}
 
-In the generation of the real transcript $(\mhl{A, B}, r', s', \mhl{\delta'_1, \delta'_2})$, only \hl{six} random integer $r$, $s$, \hl{$\delta_1, \delta_2, \eta_1$ and $\eta_2$} are used. Therefore, the above result implies that the distribution of $(\mhl{A, B}, r', s', \mhl{\delta'_1, \delta'_2})$ is identical to the distribution that $(\mhl{A}, r', s', \mhl{\delta'_1, \delta'_2})$ is uniformly distributed and \hl{$B$} is uniquely defined by the others and the verification equation. In fact, the latter process is exactly same as the simulated transcript. Therefore, the simulated transcript is identical to that of the real transcript for given $P$ in the case $n = 1$. Overall, we complete the proof of the perfect special honest verifier zero-knowledge.
+In the generation of the real transcript $(\mhl{A, B}, r', s', \mhl{\delta'_1, \delta'_2})$, only \hl{six} random integers $r$, $s$, \hl{$\delta_1, \delta_2, \eta_1$ and $\eta_2$} are used. Therefore, the above result implies that the distribution of $(\mhl{A, B}, r', s', \mhl{\delta'_1, \delta'_2})$ is identical to the distribution that $(\mhl{A}, r', s', \mhl{\delta'_1, \delta'_2})$ is uniformly distributed and \hl{$B$} is uniquely defined by the others and the verification equation. In fact, the latter process is exactly the same as the simulated transcript. Therefore, the simulated transcript is identical to that of the real transcript for given $P$ in the case $n = 1$. This concludes our proof of the perfect special honest verifier zero-knowledge.
 
 
 \noindent
-\textit{(witness-extended emulation)} For witness extended emulation, we construct an expected polynomial time extractor $\chi$ that extracts a witness using a $poly(\lambda)$-bounded tree of accepting transcripts, so that to meet the requirements of the general forking lemma. Consider the case $n = 1$. At the first move, the prover sends $A$ and $B$ to verifier. By rewinding the oracle $\langle\mathcal{P}^*, \mathcal{V}\rangle$ four times with five distinct challenges $e_1, e_2, e_3, e_4$, and $e_5$ while using the same $A$ and $B$, the extractor obtains five tuples $(r'_i, s'_i, \mhl{\delta'_{1,i}, \delta'_{2,i}})$ satisfying the following verification equation.
+\textit{(witness-extended emulation)} For witness extended emulation, we construct an expected polynomial time extractor $\chi$ that extracts a witness using a $poly(\lambda)$-bounded tree of accepting transcripts, in order to meet the requirements of the general forking lemma. Consider the case $n = 1$. At the first move, the prover sends $A$ and $B$ to the verifier. By rewinding the oracle $\langle\mathcal{P}^*, \mathcal{V}\rangle$ four times with five distinct challenges $e_1, e_2, e_3, e_4$, and $e_5$ while using the same $A$ and $B$, the extractor obtains five tuples $(r'_i, s'_i, \mhl{\delta'_{1,i}, \delta'_{2,i}})$ for $i = 1, \dots, \mhl{5}$ satisfying the following verification equation.
 \begin{equation} \label{eq_bpp_20}
     P^{e_i^2} A^{e_i} B = \bm{g}^{r'_i \cdot e_i} \bm{h}^{s'_i \cdot e_i} g^{r'_i \odot_y s'_i} \mhl{h_1^{\delta'_{1,i}} h_2^{\delta'_{2,i}}} \quad \text{for} \ i = 1, \dots, \mhl{5}
 \end{equation}
-Using the first three challenges and the corresponding valid responses, we can interpret the exponents as a product of \hl{a $3 \times 3$ Vandermonde matrix (which is invertible in $\mathbb{Z}_p^{3\times3}$ since all $e_i$'s are distinct):}
+Using the first three challenges and the corresponding valid responses, we can interpret the exponents as the product of \hl{a $3 \times 3$ Vandermonde matrix (which is invertible in $\mathbb{Z}_p^{3\times3}$ since all $e_i$'s are distinct):}
 \[
     \mhl{
     \begin{pmatrix}
@@ -1213,13 +1212,13 @@ Using the first three challenges and the corresponding valid responses, we can i
     \end{pmatrix}
     =
     \begin{pmatrix}
-        r'_1 e & s'_1 e & r'_1 \odot_y s'_1 & \delta'_{1,1} & \delta'_{2,1} \\
-        r'_2 e & s'_2 e & r'_2 \odot_y s'_2 & \delta'_{1,2} & \delta'_{2,2} \\
-        r'_2 e & s'_2 e & r'_2 \odot_y s'_2 & \delta'_{1,2} & \delta'_{2,2}        
+        r'_1 e_1 & s'_1 e_1 & r'_1 \odot_y s'_1 & \delta'_{1,1} & \delta'_{2,1} \\
+        r'_2 e_2 & s'_2 e_2 & r'_2 \odot_y s'_2 & \delta'_{1,2} & \delta'_{2,2} \\
+        r'_3 e_3 & s'_3 e_3 & r'_3 \odot_y s'_3 & \delta'_{1,3} & \delta'_{2,3}        
     \end{pmatrix}}
 \]
 \noindent
-The other exponents in the right hand side of Eq. \eqref{eq_bpp_20} are public as well. Thus, from those three challenges and responses, we can obtain the exponents $a_P, b_P, c_P, d_P, \mhl{f_P}, a_A, b_A, c_A, d_A, \mhl{f_A},\allowbreak a_B, b_B, c_B, d_B,\allowbreak \mhl{f_B}$ such that
+The other exponents in the right hand side of Eq.\,\eqref{eq_bpp_20} are public as well. Thus, from those three challenges and responses, we can obtain the exponents $a_P, b_P, c_P, d_P, \mhl{f_P}, a_A, b_A, c_A, d_A, \mhl{f_A},\allowbreak a_B, b_B, c_B, d_B,\allowbreak \mhl{f_B}$ such that
 \[\begin{aligned}
     P &= \bm{g}^{a_P} \bm{h}^{b_P} g^{c_P} \mhl{h_1^{d_P} h_2^{f_P}} \\
     A &= \bm{g}^{a_A} \bm{h}^{b_A} g^{c_A} \mhl{h_1^{d_A} h_2^{f_A}} \\
@@ -1250,7 +1249,7 @@ and, equivalently,
     \mhl{\delta'_{2,i}} &= \mhl{f_P e_i^2 + f_A e_i + f_B} \nonumber
 \end{align}
 \noindent
-By elimination $r'_i$ and $s'_i$ from Eq. \eqref{eq_bpp_21}, Eq. \eqref{eq_bpp_22}, and Eq. \eqref{eq_bpp_23}, we have for $i \in \{1, \dots, 5\}$
+By eliminating $r'_i$ and $s'_i$ from Eq.\,\eqref{eq_bpp_21}, Eq.\,\eqref{eq_bpp_22}, and Eq.\,\eqref{eq_bpp_23}, we have for $i \in \{1, \dots, 5\}$
 
 \begin{equation}\label{eq_bpp_24}\begin{aligned}
     & \quad \ a_P \odot_y b_P \cdot e_i^2 + (a_P \odot_y b_A + b_P \odot_y a_A) \cdot e_i \\
@@ -1259,9 +1258,9 @@ By elimination $r'_i$ and $s'_i$ from Eq. \eqref{eq_bpp_21}, Eq. \eqref{eq_bpp_2
     & = c_P e_i^2 + c_A e_i + c_B \quad \in \mathbb{Z}_p
 \end{aligned}\end{equation}
 \noindent
-This equation can be considered as an inner-product with $(e_i^2, e_i, 1, e_i^{-1}, e_i^{-2})$ and constants vector. Since Eq.\,\eqref{eq_bpp_24} holds for all five distinct challenges $e_i \in \{e_1,\dots, e_5\}$ and so $(e_i^2, e_i, 1, e_i^{-1}, e_i^{-2})$’s are linearly independent, each coefficient in the left hand side of Eq.\,\eqref{eq_bpp_24} must be equal to the corresponding coefficient in the right hand side of Eq.\,\eqref{eq_bpp_24}. As we intended, the extractor either extracts a witness $(a_P, b_P)$ satisfying $a_P \odot_y b_P = c_P$, or a discrete logarithm relation between the generators.
+This equation can be considered as an inner-product between $(e_i^2, e_i, 1, e_i^{-1}, e_i^{-2})$ and a constants vector. Since Eq.\,\eqref{eq_bpp_24} holds for all five distinct challenges $e_i \in \{e_1,\dots, e_5\}$ and each $(e_i^2, e_i, 1, e_i^{-1}, e_i^{-2})$ tuple is linearly independent, each coefficient in the left hand side of Eq.\,\eqref{eq_bpp_24} must be equal to the corresponding coefficient in the right hand side of Eq.\,\eqref{eq_bpp_24}. As we intended, the extractor either extracts a witness $(a_P, b_P)$ satisfying $a_P \odot_y b_P = c_P$, or a discrete logarithm relation between the generators.
 
-Next, we move to the case $n > 1$. We prove the case $n > 1$ recursively. That is, we construct an extractor $\chi_{2k}$ for the case $n = 2k$ using an extractor $\chi_k$ and let $\chi_1$ be the extractor $\chi$ we constructed for the case $n = 1$. We start with input $(\bm{g}, \bm{h}, g, \mhl{h_2, h_2}, P )$ for the case $n = 2k$. Assume that we have the extractor $\chi_k$ for the case $n = k$. The extractor $\chi_{2k}$ runs the prover to get $L$ and $R$. At this point, the extractor $\chi_{2k}$ rewinds the oracle four times, uses four distinct challenges $e_i$ for $i = 1,\dots, 4$, and sets
+Next, we move to the case $n > 1$. We prove the case $n > 1$ recursively. That is, we construct an extractor $\chi_{2k}$ for the case $n = 2k$ using an extractor $\chi_k$ and let $\chi_1$ be the extractor $\chi$ we constructed for the case $n = 1$. We start with input $(\bm{g}, \bm{h}, g, \mhl{h_2, h_2}, P )$ for the case $n = 2k$. Assume that we have the extractor $\chi_k$ for the case $n = k$. The extractor $\chi_{2k}$ runs the prover to get $L$ and $R$. At this point, the extractor $\chi_{2k}$ rewinds the oracle \hl{three} times, using four distinct challenges $e_i$ for $i = 1,\dots, 4$, and sets
 \[
     \widehat{\bm{g}}_i = \bm{g}_1^{e_i^{-1}} \circ \bm{g}_2^{e_i \cdot y^{-k}}\,, \quad
     \widehat{\bm{h}}_i = \bm{h}_1^{e_i} \circ \bm{h}_2^{e^{-1}}\,, \quad
@@ -1273,14 +1272,14 @@ Then, for each $i$, it feeds $(\widehat{\bm{g}}_i, \widehat{\bm{h}}_i, g, \mhl{h
     & L^{e_i^2} P R^{e_i^{-2}} = (\bm{g}^{e_i^{-1}} \circ \bm{g}_2^{e_i \cdot y^{-k}})^{\widehat{\bm{a}}_i} (\bm{h}_1^{e_i} \circ \bm{h}_2^{e_i^{-1}})^{\widehat{\bm{b}}_i} g^{\widehat{\bm{a}}_i \odot_y \widehat{\bm{b}}_i} \mhl{h_1^{\widehat{\alpha}_{1,i}} h_2^{\widehat{\alpha}_{2,i}}}\,, \quad i \in [1, 4]
 \end{aligned}\end{equation}
 \noindent
-For the first three challenges $e_1, e_2, e_3$, $(e_i^2, 1, e_i^{-2})$’s are linearly independent and so compose of a $3 \times 3$ invertible matrix in $\mathbb{Z}_p^{3 \times 3}$. We can see that all exponents are constants known to the extractor. Thus, by applying the elementary linear algebra in the public exponent of the first three equations of Eq.\,\eqref{eq_bpp_25}, we can find the exponents $\bm{a}_P, \bm{b}_P, c_P, d_P, \mhl{f_P}, \bm{a}_L, \bm{b}_L, c_L, d_L, \mhl{f_L}, \bm{a}_R, \bm{b}_R, c_R, d_R, \mhl{f_R}$ satisfying
+For the first three challenges $e_1, e_2, e_3$, the tuples $(e_i^2, 1, e_i^{-2})$ are linearly independent and so compose a $3 \times 3$ invertible matrix in $\mathbb{Z}_p^{3 \times 3}$. We can see that all exponents are constants known to the extractor. Thus, by applying elementary linear algebra to the public exponent of the first three equations of Eq.\,\eqref{eq_bpp_25}, we can find the exponents $\bm{a}_P, \bm{b}_P, c_P, d_P, \mhl{f_P}, \bm{a}_L, \bm{b}_L, c_L, d_L, \mhl{f_L}, \bm{a}_R, \bm{b}_R, c_R, d_R, \mhl{f_R}$ satisfying
 \[\begin{aligned}
     P &= \bm{g}^{\bm{a}_P} \bm{h}^{\bm{b}_P} g^{c_P} \mhl{h_1^{d_P} h_2^{f_P}} &\quad \in \mathbb{G}\,, \\
     L &= \bm{g}^{\bm{a}_L} \bm{h}^{\bm{b}_L} g^{c_L} \mhl{h_1^{d_L} h_2^{f_L}}  &\quad \in \mathbb{G}\,, \\
     R &= \bm{g}^{\bm{a}_R} \bm{h}^{\bm{b}_R} g^{c_R} \mhl{h_1^{d_R} h_2^{f_R}} &\quad \in \mathbb{G}\,.
 \end{aligned}\]
 
-From now, we prove that those exponents satisfy the desired relation $c_P = \bm{a}_P \odot_y \bm{b}_P$. Putting the above representations of $P, L, R$ into Eq.\,\eqref{eq_bpp_25} for each $i$, we have the following equations with bases $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$ under the discrete logarithm relation assumption.
+Now we prove that those exponents satisfy the desired relation $c_P = \bm{a}_P \odot_y \bm{b}_P$. Putting the above representations of $P, L, R$ into Eq.\,\eqref{eq_bpp_25} for each $i$, we have the following equations with bases $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$ under the discrete logarithm relation assumption.
 
 \begin{align}
     \bm{g}^{\bm{a}_L e_i^2} \bm{g}^{\bm{a}_P} \bm{g}^{\bm{a}_R e_i^{-2}} &= (\bm{g}_1^{e_i^{-1}} \circ \bm{g}_2^{e_i \cdot y^{-k}})^{\widehat{\bm{a}}_i} \label{eq_bpp_26} \\
@@ -1290,9 +1289,9 @@ From now, we prove that those exponents satisfy the desired relation $c_P = \bm{
     \mhl{h_2^{f_L e_i^2} h_2^{f_P} h_2^{f_R e_i^{-2}}} &= \mhl{h_2^{\widehat{\alpha}_{2,i}}} \nonumber
 \end{align}
 \noindent
-That is, Eq.\,\eqref{eq_bpp_25} is separated into the above \hl{five} equations according to the bases $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$. If we find exponents satisfying Eq.\,\eqref{eq_bpp_25} but not the above \hl{five} equations, it directly implies a non-trivial relation between the generators and so break the discrete logarithm assumption. We use the above \hl{five} equations to prove $\bm{a}_P \odot_y \bm{b}_P = c_P$. To this end, we first find a relation between $\widehat{\bm{a}}_i$ and $\bm{a}_P$ from Eq.\,\eqref{eq_bpp_26}, second find another relation between $\widehat{\bm{b}}_i$ and $\bm{b}_P$ from Eq.\,\eqref{eq_bpp_27}, and then finally use Eq.\,\eqref{eq_bpp_28} containing $c_P, \widehat{\bm{a}}_i, \widehat{\bm{b}}_i$ variables in order to show the desired relation between $c_P, \bm{a}_P$, and $\bm{b}_P$.
+That is, Eq.\,\eqref{eq_bpp_25} is separated into the above \hl{five} equations according to the bases $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$. If we find exponents satisfying Eq.\,\eqref{eq_bpp_25} but not the above \hl{five} equations, it directly implies a non-trivial relation between the generators which breaks the discrete logarithm assumption. We use the above \hl{five} equations to prove $\bm{a}_P \odot_y \bm{b}_P = c_P$. To this end, we first find a relation between $\widehat{\bm{a}}_i$ and $\bm{a}_P$ with Eq.\,\eqref{eq_bpp_26}, second find another relation between $\widehat{\bm{b}}_i$ and $\bm{b}_P$ with Eq.\,\eqref{eq_bpp_27}, and then finally use Eq.\,\eqref{eq_bpp_28} to show the desired relation between $c_P, \bm{a}_P$, and $\bm{b}_P$.
 
-First, we show that relation between $\widehat{\bm{a}}_i$ and $\bm{a}_P$ from Eq.\,\eqref{eq_bpp_26}. By the discrete logarithm assumption, it is infeasible to find relation between $\bm{g}_1$ and $\bm{g}_2$, so that Eq.\,\eqref{eq_bpp_26} induces two equations with the base $\bm{g}_1$ and $\bm{g}_2$, which are equivalent to the following equations.
+First, we show the relation between $\widehat{\bm{a}}_i$ and $\bm{a}_P$ with Eq.\,\eqref{eq_bpp_26}. By the discrete logarithm assumption, it is infeasible to find a relation between $\bm{g}_1$ and $\bm{g}_2$, so Eq.\,\eqref{eq_bpp_26} can be interpreted as two equations on bases $\bm{g}_1$ and $\bm{g}_2$, as follows.
 
 \[\begin{aligned}
     \bm{a}_{L,1} e_i^2 + \bm{a}_{P,1} + \bm{a}_{R,1} e_i^{-2} &= e_i^{-1} \widehat{\bm{a}}_i \\
@@ -1306,7 +1305,7 @@ where $\bm{a}_P = (\bm{a}_{P,1}, \bm{a}_{P,2})$, $\bm{a}_L = (\bm{a}_{L,1}, \bm{
     \bm{a}_{L,1} e_i^3 + \bm{a}_{P,1} e_i + \bm{a}_{R,1} e_i^{-1} = \bm{a}_{L,2} y^k e_i + \bm{a}_{P,2} y^k e_i^{-1} + \bm{a}_{R,2} y^k e_i^{-3}
 \end{equation}
 
-Eq.\,\eqref{eq_bpp_29} holds for all four challenges $e_1, \dots, e_4$ and there are four variable terms $e_i, e_i^3, e_i^{-1}, e_i^{-3}$. This implies that the following must holds.
+Eq.\,\eqref{eq_bpp_29} holds for all four challenges $e_1, \dots, e_4$ and there are four variable terms $e_i, e_i^3, e_i^{-1}, e_i^{-3}$. This implies that the following must hold.
 
 \[\begin{aligned}
     \bm{a}_{L,1} &= 0 \quad &\in \mathbb{Z}_p^k\\
@@ -1316,21 +1315,21 @@ Eq.\,\eqref{eq_bpp_29} holds for all four challenges $e_1, \dots, e_4$ and there
 \end{aligned}\]
 
 \noindent
-Using the above result with Eq.\,\eqref{eq_bpp_26}, we obtain that the exponent of the base $\bm{g}_1$ in Eq.\,\eqref{eq_bpp_26} is
+Using the above result with Eq.\,\eqref{eq_bpp_26}, we see that the exponent of the base $\bm{g}_1$ in Eq.\,\eqref{eq_bpp_26} is
 
 \[
     \bm{a}_{P,1} + \bm{a}_{P,2} y^k e_i^{-2} = e_i^{-1} \widehat{\bm{a}}_i\,,
 \]
 
 \noindent
-so that we have a relation between $\widehat{\bm{a}}_i$ and $\bm{a}_P$,
+which means we have a relation between $\widehat{\bm{a}}_i$ and $\bm{a}_P$,
 
 \begin{equation}\label{eq_bpp_30}
     \widehat{\bm{a}}_i = \bm{a}_{P,1} e_i + \bm{a}_{P,2} y^k e_i^{-1}
 \end{equation}
 
 
-Second, we show that relation between $\widehat{\bm{b}}_i$ and $\bm{b}_P$ from Eq.\,\eqref{eq_bpp_27}. Under the discrete logarithm assumption, we extract the exponent of the base $\bm{h}_1$ and $\bm{h}_2$ from Eq.\,\eqref{eq_bpp_27}.
+Second, we show the relation between $\widehat{\bm{b}}_i$ and $\bm{b}_P$ with Eq.\,\eqref{eq_bpp_27}. Like with Eq.\,\eqref{eq_bpp_26}, we use the discrete logarithm assumption to extract the exponents of the bases $\bm{h}_1$ and $\bm{h}_2$ from Eq.\,\eqref{eq_bpp_27}.
 
 \[\begin{aligned}
     \bm{b}_{L,1} e_i^2 + \bm{b}_{P,1} + \bm{b}_{R,1} e_i^{-2} &= e_i \widehat{\bm{b}}_i \\
@@ -1344,7 +1343,7 @@ Second, we show that relation between $\widehat{\bm{b}}_i$ and $\bm{b}_P$ from E
 \end{equation}
 
 \noindent
-Eq.\,\eqref{eq_bpp_31} holds for all four challenges $e_1,\dots\,e_4$ and there are four variable terms $e_i, e_i^3, e_i^{-1}, e_i^{-3}$. This implies that the following must holds.
+Eq.\,\eqref{eq_bpp_31} holds for all four challenges $e_1,\dots\,e_4$ and there are four variable terms $e_i, e_i^3, e_i^{-1}, e_i^{-3}$. This implies that the following must hold.
 
 \[\begin{aligned}
     \bm{b}_{L,1} &= \bm{b}_{P,2} \quad &\in \mathbb{Z}_p^k \\
@@ -1354,21 +1353,20 @@ Eq.\,\eqref{eq_bpp_31} holds for all four challenges $e_1,\dots\,e_4$ and there 
 \end{aligned}\]
 
 \noindent
-Using the above result with Eq.\,\eqref{eq_bpp_27}, we obtain that the exponent of the base $\bm{h}_1$ in Eq.\,\eqref{eq_bpp_27} is
+Using the above result with Eq.\,\eqref{eq_bpp_27}, we see that the exponent of the base $\bm{h}_1$ in Eq.\,\eqref{eq_bpp_27} is
 
 \[
     \bm{b}_{P,2} e_i^2 + \bm{b}_{P,1} = e_i \widehat{\bm{b}}_i\,,
 \]
 
 \noindent
-so that we have a relation between $\widehat{\bm{b}}_i$ and $\bm{b}_P$,
+which means we have a relation between $\widehat{\bm{b}}_i$ and $\bm{b}_P$,
 
 \begin{equation}\label{eq_bpp_32}
     \widehat{\bm{b}}_i = \bm{b}_{P,2} e_i + \bm{b}_{P,1} e_i^{-1}
 \end{equation}
 
-Finally, we use Eq.\,\eqref{eq_bpp_28} in order to show relation between $c_P, \bm{a}_P$, and $\bm{b}_P$. Taking the WIP $\odot_y$ on Eq.\,\eqref{eq_bpp_30} and Eq.\,\eqref{eq_bpp_32}, we have
-
+Finally, we use Eq.\,\eqref{eq_bpp_28} to show the relation between $c_P, \bm{a}_P$, and $\bm{b}_P$. Taking the WIP $\odot_y$ on Eq.\,\eqref{eq_bpp_30} and Eq.\,\eqref{eq_bpp_32}, we have
 \[\begin{aligned}
     &\widehat{\bm{a}}_i \odot_y \widehat{\bm{b}}_i \\
     = (&\bm{a}_{P,1} \odot_y \bm{b}_{P,2}) e_i^2 + (\bm{a}_{P,1} \odot_y \bm{b}_{P,1} + \bm{a}_{P,2} \odot_y \bm{b}_{P,2} \cdot y^k) \\
@@ -1391,7 +1389,7 @@ Combining this result with Eq.\,\eqref{eq_bpp_28}, we have
 \]
 
 \noindent
-The above equation holds for three distinct challenges $e_1,\dots, e_3$. Since the vectors $(e_i^2, 1, e_i^{-2})$’s are linear independent, this implies that the following must holds.
+The above equation holds for the first three distinct challenges $e_1,\dots, e_3$. Since the vectors $(e_i^2, 1, e_i^{-2})$’s are linearly independent, this implies that the following must hold.
 
 \[
     \bm{a}_P \odot_y \bm{b}_P = \bm{a}_{P,1} \odot_y \bm{b}_{P,1} + \bm{a}_{P,2} \odot_y \bm{b}_{P,2} \cdot y^k = c_P
@@ -1408,9 +1406,9 @@ For each recursive step, the extractor $\chi_{2k}$ uses 4 transcripts and $\chi_
 \newpage
 \subsection{Zero Knowledge Arguments for Range Proof and Aggregate Range Proof}
 
-Range proof protocol with double-blinded commitments support is shown on Fig. \ref{f_zka_rp} and aggregated range proof protocol is shown on Fig. \ref{f_zka_arp}. We provide the security statement for the proposed extended protocols in Theorem \ref{th_bpp_aggregated}. The proof of Theorem \ref{th_bpp_aggregated} mostly corresponds to the original proof in Bulletproofs+ paper\cite{BP+}. The WEE proof for Theorem \ref{th_bpp_aggregated} originally has a mistake, that was found and discussed in \cite{bpp_audit_Suyash}. We provide fixed WEE proof with the exact equations. For reader’s convenience all changes are highlighted.
+A range proof protocol with support for double-blinded commitments is shown on Fig. \ref{f_zka_rp} and a corresponding aggregated range proof protocol is shown on Fig. \ref{f_zka_arp}. We provide the security statement for the proposed extended protocols in Theorem \ref{th_bpp_aggregated}. The proof of Theorem \ref{th_bpp_aggregated} mostly corresponds to the original proof in the Bulletproofs+ paper\cite{BP+}. The WEE proof for Theorem \ref{th_bpp_aggregated} originally has a mistake, that was found and discussed in \cite{bpp_audit_Suyash}. We provide a fixed WEE proof with the exact equations. For the reader’s convenience all changes are highlighted.
 
-As soon as Theorem \ref{th_bpp_single} is a particular case of Theorem \ref{th_bpp_aggregated}, we, like in the original paper, omit the proof of Theorem \ref{th_bpp_single}. 
+As soon as Theorem \ref{th_bpp_single} can be shown to be a particular case of Theorem \ref{th_bpp_aggregated}, we, like in the original paper, omit the proof of Theorem \ref{th_bpp_single}. 
 
 
 
@@ -1559,16 +1557,16 @@ As soon as Theorem \ref{th_bpp_single} is a particular case of Theorem \ref{th_b
 
 \begin{theorem} \label{th_bpp_single}
 The zero-knowledge argument for range proof presented in Figure \ref{f_zka_rp} has perfect
-completeness, perfect honest verifier zero-knowledge and computational witness extended emulation.
+completeness, perfect honest verifier zero-knowledge, and computational witness extended emulation.
 \end{theorem}
 
 \begin{theorem} \label{th_bpp_aggregated}
 The zero-knowledge argument for range proof presented in Figure \ref{f_zka_arp} has perfect
-completeness, perfect honest verifier zero-knowledge and computational witness extended emulation.
+completeness, perfect honest verifier zero-knowledge, and computational witness extended emulation.
 \end{theorem}
 \begin{proof}
 
-\textit{(perfect completeness)} Since the proposed range proof argument runs the WIP argument as a subprotocol, we prove the perfect completeness by showing that if $A = \bm{g}^{\bm{a}_L} \bm{h}^{\bm{a}_R} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}}$ is correctly computed, then $\widehat{A}$ satisfies the WIP relation such that
+\textit{(perfect completeness)} Since the proposed range proof argument runs the WIP argument as a subprotocol, we prove perfect completeness by showing that if $A = \bm{g}^{\bm{a}_L} \bm{h}^{\bm{a}_R} \mhl{h_1^{\alpha_1} h_2^{\alpha_2}}$ is correctly computed, then $\widehat{A}$ satisfies the WIP relation such that
 \begin{equation} \label{eq_bpp_33}
     \widehat{A} = \bm{g}^{\widehat{\bm{a}}_L} \bm{h}^{\widehat{\bm{a}}_R} g^{\widehat{\bm{a}}_L \odot_y \widehat{\bm{a}}_R} \mhl{h_1^{\widehat{\alpha}_1} h_2^{\widehat{\alpha}_2}} \ \in \mathbb{G}
 \end{equation}
@@ -1577,7 +1575,7 @@ From the computation
     \widehat{A} = A \cdot \bm{g}^{-\bm{1}^{mn} \cdot z} \bm{h}^{\bm{d} \circ \overleftarrow{y}^{mn} + \bm{1}^{mn} \cdot z}  \left(\prod_{j=1}^m V_j^{z^{2j}} \right)^{y^{mn+1}}
     g^{\langle \bm{1}^{mn}, \overrightarrow{y}^{mn} \rangle \cdot z - \langle \bm{1}^{mn}, \bm{d} \rangle \cdot y^{mn+1} z - \langle \bm{1}^{mn}, \overrightarrow{y}^{mn} \rangle \cdot z^2 }
 \]
-one can easily check the exponens of bases $\bm{g}, \bm{h}$, \hl{$h_1$, and $h_2$} are equal to $\widehat{\bm{a}}_L, \widehat{\bm{a}}_L$, \hl{$\widehat{\alpha}_1$ and $\widehat{\alpha}_2$} respectively. Only the thing that remains to confirm is whether the exponent of the base $g$ is equal to $\widehat{\bm{a}}_L \odot_y \widehat{\bm{a}}_L$ that can be checked as follows.
+one can easily check that the exponents of bases $\bm{g}, \bm{h}$, \hl{$h_1$, and $h_2$} are equal to $\widehat{\bm{a}}_L, \widehat{\bm{a}}_L$, \hl{$\widehat{\alpha}_1$ and $\widehat{\alpha}_2$} respectively. The only thing that remains is to confirm whether the exponent of the base $g$ is equal to $\widehat{\bm{a}}_L \odot_y \widehat{\bm{a}}_L$. This can be checked as follows.
 \begin{equation}\begin{aligned} \label{eq_bpp_34}
     &\quad \widehat{\bm{a}}_L \odot_y \widehat{\bm{a}}_R \\
     &= (\bm{a}_L - \bm{1}^{mn} \cdot z) \odot_y (\bm{a}_R + \bm{d} \circ \overleftarrow{y}^{mn} + \bm{1}^{mn} \cdot z) \\
@@ -1585,19 +1583,19 @@ one can easily check the exponens of bases $\bm{g}, \bm{h}$, \hl{$h_1$, and $h_2
     &\hspace{104pt} - \bm{1}^{mn} \odot_y (\bm{d} \circ \overleftarrow{y}^{mn}) \cdot z - \bm{1}^{mn} \odot_y \bm{1}^{mn} \cdot z^2 \\
     &= \langle \bm{a}_L, \bm{d} \rangle \cdot y^{mn+1} + \langle \bm{1}^{mn}, \overrightarrow{y}^{mn} \rangle \cdot z - \langle \bm{1}^{mn}, \bm{d} \rangle \cdot z \cdot y^{mn+1} - \langle \bm{1}^{mn}, \overrightarrow{y}^{mn} \rangle \cdot z^2
 \end{aligned}\end{equation}
-The first component in the far right hand side in Eq.\eqref{eq_bpp_34} is equal to
+The first component in the far right hand side in Eq.\,\eqref{eq_bpp_34} is equal to
 \[
     \langle \bm{a}_L, \sum_{j=1}^m z^{2j} \cdot \bm{d}_j \rangle \cdot y^{mn+1} = \sum_{j=1}^m z^{2j} \cdot \langle \bm{a}_L, \bm{d}_j \rangle \cdot y^{mn+1} = \sum_{j=1}^m z^{2j} \cdot v_j \cdot y^{mn+1}
 \]
-which is the $g$-base exponent of $(\prod_{j=1}^m V_j^{z^{2j}})^{y^{mn+1}}$. Then, Eq.\eqref{eq_bpp_34} is exactly equal to the $g$-base exponent of $\widehat{A}$, so that Eq.\eqref{eq_bpp_33} holds. Since Eq.\eqref{eq_bpp_33} has the correct format of the bilinear argument, we can utilize the perfect completeness of the WIP argument, so that we conclude that the proposed aggregatable range proof argument has perfect completeness.
+which is the $g$-base exponent of $(\prod_{j=1}^m V_j^{z^{2j}})^{y^{mn+1}}$. This means Eq.\,\eqref{eq_bpp_34} is exactly equal to the $g$-base exponent of $\widehat{A}$, so Eq.\,\eqref{eq_bpp_33} holds. Since Eq.\,\eqref{eq_bpp_33} has the format of a bilinear argument, we can utilize the perfect completeness of the WIP argument, which lets us conclude that the proposed aggregatable range proof argument has perfect completeness.
 
 
 \noindent
-\textit{(perfect SHVZK)} For perfect special honest verifier zero-knowledge, we construct a simulator. The simulator samples $A \stackrel{\$}{\leftarrow} \mathbb{G}$ and sets the input of the WIP argument according to the description of the range protocol. Then, the simulator runs the simulator for the perfect SHVZK of the WIP argument as a subalgorithm. In the real transcript, $A$ is uniformly distributed due to the blinding factors $\mhl{\alpha_1, \alpha_2}$, and it, along with $y$ and $z$, contributes to define the input of the bilinear argument. In the simulated transcript, $A$ is also uniformly generated and for fixed input of the WIP argument, we have already proved that the simulator for the perfect SHVZK of the WIP argument can perfectly simulate the real transcript. Therefore, we conclude that the distribution of simulated transcript is identical to that of the real transcript.
+\textit{(perfect SHVZK)} For perfect special honest verifier zero-knowledge, we construct a simulator. The simulator samples $A \stackrel{\$}{\leftarrow} \mathbb{G}$ and sets the input of the WIP argument according to the description of the range protocol. Then, the simulator runs the simulator from the perfect SHVZK proof in the WIP argument as a subalgorithm. In the real transcript, $A$ is uniformly distributed due to the blinding factors $\mhl{\alpha_1, \alpha_2}$, and $A$, along with $y$ and $z$, contributes to define the input of the bilinear argument. In the simulated transcript, $A$ is also uniformly generated, and for any fixed input of the WIP argument we have already proved that the simulator for the perfect SHVZK proof in the WIP argument can perfectly simulate the real transcript. Therefore, we conclude that the simulated transcript's distribution is identical to that of the real transcript.
 
 
 \noindent
-\textit{(witness-extended emulation)} We prove that the proposed protocol has witness-extended emulation. To this end, we construct the extractor $\chi_R$ that extracts a witness of the range proof argument by using $3n + 3$ distinct $y$ challenges and $2m + 2$ distinct $z$ challenges. In the proof, we first explain how the extractor extracts opening $v_j$'s of the Pedersen commitments and next prove that it satisfies the desired relation $v_j \in [0, 2^n - 1]$.
+\textit{(witness-extended emulation)} We prove that the proposed protocol has witness-extended emulation. To this end, we construct the extractor $\chi_R$ that extracts a witness of the range proof argument by using $3n + 3$ distinct $y$ challenges and $2m + 2$ distinct $z$ challenges. In the proof, we first explain how the extractor extracts openings $v_j$ of the Pedersen commitments and next prove that it satisfies the desired relation $v_j \in [0, 2^n - 1]$.
 
 In order to extract openings of the Pedersen commitments, the extractor uses another extractor $\chi_B$ for the bilinear arguments whose existence is already proved in the proof of Theorem \ref{th_bpp_wip}. More precisely, after fixing the first message $A$ sent by the prover, $\chi_R$ rewinds the prover by using one $y$ challenge and $m + 1$ distinct $z$ challenges, computes the corresponding $\widehat{A}$, calls $\chi_B$ by giving $(\bm{g}, \bm{h}, g, \mhl{h_1, h_2}, \widehat{A})$ as input, and then obtains the corresponding values $\widehat{\bm{a}}_L, \widehat{\bm{a}}_R$, \hl{$\widehat{\alpha}_1$ and $\widehat{\alpha}_2$} such that
 \begin{equation}\begin{aligned} \label{eq_bpp_35}
@@ -1605,12 +1603,10 @@ In order to extract openings of the Pedersen commitments, the extractor uses ano
     =\;\ & A \cdot \bm{g}^{-\bm{1}^{mn} \cdot z} \bm{h}^{\bm{d} \circ \overleftarrow{y}^{mn} + \bm{1}^{mn} \cdot z}  \left(\prod_{j=1}^m V_j^{z^{2j}} \right)^{y^{mn+1}}
     g^{\langle \bm{1}^{mn}, \overrightarrow{y}^{mn} \rangle \cdot z - \langle \bm{1}^{mn}, \bm{d} \rangle \cdot y^{mn+1} z - \langle \bm{1}^{mn}, \overrightarrow{y}^{mn} \rangle \cdot z^2 }
 \end{aligned}\end{equation}
-Here, $\chi_R$ knows all exponents of both hand sides in Eq. \eqref{eq_bpp_35} and so we can efficiently perform any linear operations among the exponents in Eq. \eqref{eq_bpp_35}. The tuple of exponents of $A$ and $V_j$'s in Eq. \eqref{eq_bpp_35} is the $(m + 1)$-dimensional vector $(1, y^{mn+1}z^2,\dots, y^{mn+1}z^{2m})$. We know that a set of vectors $(1, z^2, . . . , z^{2m})$ for $m + 1$ distinct $z$’s is linearly independent since it composes the Vandermonde matrix with distinct rows. By multiplying the inverse of such the Vandermonde
-matrix to the exponents in Eq. \eqref{eq_bpp_35}, the extractor can compute $A$ and $V_j^{y^{mn+1}}$'s decompositions with base $\bm{g}, \bm{h}, g$, \hl{$h_1$ and $h_2$}, and so do $V_j$ for $j = 1,\dots, m$ by exponentiation with $y^{-mn-1}$. Therefore, now the extractor $\chi_R$ has values $\bm{a}_L, \bm{a}_R, \alpha, \beta, \mhl{\bm{v}_{L,j}, \bm{v}_{R,j}}, v_j$'s, \hl{$\gamma_{1,j}$ and $\gamma_{2,j}$'s} such that $A = \bm{g}^{\bm{a}_L} \bm{h}^{\bm{a}_R} g^\beta \mhl{h_1^{\alpha_1} h_2^{\alpha_2}}$ and $V_j = \mhl{\bm{g}^{\bm{v}_{L,j}}} \mhl{\bm{h}^{\bm{v}_{R,j}}} g^{v_j} \mhl{h_1^{\gamma_{1,j}} h_2^{\gamma_{2,j}}}$ for $j = 1,\dots, m$. In particular, we successfully extract $v_j$'s for $j = 1,\dots, m$ opening of the Pedersen commitments.
+Here, $\chi_R$ knows all exponents in Eq.\,\eqref{eq_bpp_35}, so we can efficiently perform any linear operations among the exponents in Eq.\,\eqref{eq_bpp_35}. The tuple of exponents corresponding to $A$ and each $V_j$ in Eq.\,\eqref{eq_bpp_35} is the $(m + 1)$-dimensional vector $(1, y^{mn+1}z^2,\dots, y^{mn+1}z^{2m})$. We know that a set of vectors $(1, z^2, . . . , z^{2m})$ for $m + 1$ distinct $z$’s is linearly independent since it composes the Vandermonde matrix with distinct rows. By multiplying the inverse of such a Vandermonde
+matrix to the exponents in Eq.\,\eqref{eq_bpp_35}, the extractor can compute the decompositions of $A$ and each $V_j^{y^{mn+1}}$ with respect to bases $\bm{g}, \bm{h}, g$, \hl{$h_1$ and $h_2$}, and so do $V_j$ for $j = 1,\dots, m$ by exponentiation with $y^{-mn-1}$. Therefore, now the extractor $\chi_R$ has values $\bm{a}_L, \bm{a}_R, \alpha, \beta, \mhl{\bm{v}_{L,j}, \bm{v}_{R,j}}, v_j$, \hl{$\gamma_{1,j}$ and $\gamma_{2,j}$} such that $A = \bm{g}^{\bm{a}_L} \bm{h}^{\bm{a}_R} g^\beta \mhl{h_1^{\alpha_1} h_2^{\alpha_2}}$ and $V_j = \mhl{\bm{g}^{\bm{v}_{L,j}}} \mhl{\bm{h}^{\bm{v}_{R,j}}} g^{v_j} \mhl{h_1^{\gamma_{1,j}} h_2^{\gamma_{2,j}}}$ for $j = 1,\dots, m$. In particular, we successfully extracted $v_j$ for $j = 1,\dots, m$ openings of the Pedersen commitments.
 
-Next, we show that the extracted values $\bm{a}_L, \bm{a}_R, \bm{v}_L, \bm{v}_R$, and $v_j$ for $j = 1,\dots, m$ satisfy the desired relations $v_j \in [0, 2^n-1]$ and \hl{$\bm{v}_{L,j} = \bm{v}_{R,j} = \bm{0}$ for $j = 1,\dots, m$}. To this end, it is sufficient to show that these values satisfy five equations, $\bm{a}_R = \bm{a}_L - \bm{1}^{mn}$, $\bm{a}_L \circ \bm{a}_R = \bm{0}$, $\langle \bm{a}_L, \bm{d}_j \rangle = v_j$, \hl{$\bm{v}_{L,j} \circ \bm{v}_{R,j} = \bm{0}$, and $\bm{v}_{L,j} + \bm{v}_{R,j} = \bm{0}$ for $j \in [1, m]$}. First, we consider Eq. \eqref{eq_bpp_35}. Although $\widehat{\bm{a}}_L, \widehat{\bm{a}}_R, \mhl{\widehat{\alpha}_1, \widehat{\alpha}_2}$ are computed by using only the $m + 1$ challenges $z_j$'s, these are fixed exponents for the commitment $A$ and public $V_j$ for $j = 1,\dots, m$ regardless of challenges. That is, if we find a challenge pair that does not satisfy Eq. \eqref{eq_bpp_35}, then we directly obtains a non-trivial discrete logarithm relation between the $\mhl{2mn + 3}$ generators $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$ of $\mathbb{G}$. If Eq. \eqref{eq_bpp_35} holds for all challenge pairs $(y, z)$, again under the discrete logarithm relation assumption, we can change Eq. \eqref{eq_bpp_35} with the following \hl{five} equations according to the bases $\bm{g}, \bm{h}, g$, \hl{$h_1$ and $h_2$}.
-
-
+Next, we show that the extracted values $\bm{a}_L, \bm{a}_R, \bm{v}_L, \bm{v}_R$, and $v_j$ for $j = 1,\dots, m$ satisfy the desired relations $v_j \in [0, 2^n-1]$ and \hl{$\bm{v}_{L,j} = \bm{v}_{R,j} = \bm{0}$ for $j = 1,\dots, m$}. To this end, it is sufficient to show that these values satisfy the five equations $\bm{a}_R = \bm{a}_L - \bm{1}^{mn}$, $\bm{a}_L \circ \bm{a}_R = \bm{0}$, $\langle \bm{a}_L, \bm{d}_j \rangle = v_j$, \hl{$\bm{v}_{L,j} \circ \bm{v}_{R,j} = \bm{0}$, and $\bm{v}_{L,j} + \bm{v}_{R,j} = \bm{0}$ for $j \in [1, m]$}. First, we consider Eq.\,\eqref{eq_bpp_35}. Although $\widehat{\bm{a}}_L, \widehat{\bm{a}}_R, \mhl{\widehat{\alpha}_1, \widehat{\alpha}_2}$ are computed by using only the $m + 1$ challenges $z_j$, these are fixed exponents for the commitments $A$ and public $V_j$ for $j = 1,\dots, m$, regardless of challenges. That is, if we find a challenge pair that does not satisfy Eq.\,\eqref{eq_bpp_35}, then we directly obtain a non-trivial discrete logarithm relation between the $\mhl{2mn + 3}$ generators $\bm{g}, \bm{h}, g, \mhl{h_1, h_2}$ of $\mathbb{G}$. If Eq.\,\eqref{eq_bpp_35} holds for all challenge pairs $(y, z)$, again under the discrete logarithm relation assumption, we can change Eq.\,\eqref{eq_bpp_35} with the following \hl{five} equations according to the bases $\bm{g}, \bm{h}, g$, \hl{$h_1$ and $h_2$}.
 \[\begin{aligned}
     \widehat{\bm{\alpha}}_L &= \bm{a}_L - \bm{1}^{mn} \cdot z + \mhl{y^{mn+1} \cdot \bm{u}_L} \quad \in \mhl{\mathbb{Z}_p^{mn}} \mhl{\text{, where }\ \bm{u}_L = \sum_{j=1}^m z^{2j} \cdot \bm{v}_{L,j}}\\
     \widehat{\bm{\alpha}}_R &= \bm{a}_R + \bm{d} \circ \overleftarrow{y}^{mn} + \bm{1}^{mn} \cdot z + \mhl{y^{mn+1} \cdot \bm{u}_R} \  \in \mhl{\mathbb{Z}_p^{mn}} \text{,\ where } \bm{d} = \sum_{j=1}^m z^{2j} \cdot \bm{d}_j\mhl{,\ \bm{u}_R = \sum_{j=1}^m z^{2j} \cdot \bm{v}_{R,j}}\\
@@ -1640,13 +1636,13 @@ The right hand sides of the above equations can be considered as polynomials in 
     - \underbrace{\langle \bm{1}^{mn}, \overrightarrow{y}^{mn} \rangle \cdot z^2}_{yz^2,\dots,y^{mn}z^2\ \text{terms}}
 \end{aligned}\end{equation}
 
-The above equation holds for all $y, z$ challenges, which are $3n + 3$ distinct $y$ challenges and $2m + 2$ distinct $z$ challenges, and thus the following equations must holds. (See Lemma 2 in Appendix B.2 \hl{in the original paper} \cite{BP+} for a rigorous proof for this argument.)
+The above equation holds for all $y, z$ challenges, which are $3n + 3$ distinct $y$ challenges and $2m + 2$ distinct $z$ challenges, and thus the following equations must hold. (See Lemma 2 in Appendix B.2 \hl{in the original paper} \cite{BP+} for a rigorous proof for this argument.)
 
 {\renewcommand{\arraystretch}{1.5}
 \noindent \setlength\tabcolsep{0.5pt}
 \begin{tabularx}{1\textwidth} {|c|cccl@{}}
     \cline{1-1}
-    Variables in Eq.\eqref{eq_bpp_36} & \boxed{\text{Left Hand Side}} & \multicolumn{2}{c}{\boxed{\text{Right Hand Side}}} & \\
+    Variables in Eq.\,\eqref{eq_bpp_36} & \boxed{\text{Left Hand Side}} & \multicolumn{2}{c}{\boxed{\text{Right Hand Side}}} & \\
     \cline{1-1}
     $y,\dots,y^{mn}$ & $\bm{a}_L \odot_y \bm{a}_R$ & $=$ & $0$ & $\Rightarrow \bm{a}_L \circ \bm{a}_R = \bm{0} $  \\
     \cline{1-1}
