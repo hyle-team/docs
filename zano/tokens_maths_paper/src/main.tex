@@ -1,8 +1,11 @@
 \documentclass{article}
 \usepackage[T2A]{fontenc}
 \usepackage[utf8]{inputenc}
+%\usepackage[russian]{babel}
+%\usepackage{natbib}
 \usepackage{graphicx}
 \usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
 \hypersetup{
   colorlinks=true,
   linkcolor=blue,
@@ -23,19 +26,21 @@
 
 \usepackage[a4paper, total={6in, 8in}, margin=0.9in,top=0.9in]{geometry}
 
-
+\usepackage[style=numeric]{biblatex}
+\addbibresource{references.bib}
 
 \newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
 \newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
 
-\title{\huge{Zano: tokens with hidden amounts \\ (DRAFT)}}
+\title{\huge{Zano: confidential assets scheme \\ (DRAFT)}}
 \author{sowle}
+%\date{August 2021}
 
 \begin{document}
 \maketitle
 
 \begin{abstract}
-    In this paper, we describe two possible options to implement tokens (a.k.a. colored coins) in Zano with unlimited decoy mixing capability and hidden amounts as an extension to the Ring Confidential Transactions scheme.
+    In this paper, we describe a practical way of implementing confidential assets (a.k.a. tokens or colored coins) in Zano with unlimited decoy mixing capability and hidden amounts as an extension to the Ring Confidential Transactions scheme.
 \end{abstract}
 
 \section{Notation}
@@ -49,13 +54,15 @@ $H_s$ is a scalar hash-function: $H_s:\{0,1\}^* \to \mathbb{Z}_l$
 
 $H_p$ is a deterministic hash function: $H_p:\{0,1\}^* \to \mathbb{G}$.
 
-\section{Variant A}
-\subsection{Basic idea}
-In a normal RingCT transaction each output's amount $a$ is committed to in a commitment
+\section{The concept}
+\subsection{Asset descriptor}
+Our approach is based on the concept of confidential assets with blinded assets tags originally proposed in \cite{conf_assets} and adapted in \cite{lelantus_cla}. Here we briefly describe the concept.
+
+In a normal confidential transaction each output's amount $a$ is committed using Pedersen commitment scheme with additively homomorphic commitments:
 \[ A = aH + fG \]
 where $H, G \in \mathbb{G}$ are group elements with no efficiently-computable discrete logarithm relation and $f \in \mathbb{Z}_l$ is a random blinding factor.
 
-The initial emission of a token in Zano will be made through a transaction which pays (or burns) some amount of native coins and puts a public \textit{token descriptor} with the following information associated with the given token:
+The initial emission of an asset in Zano will be made through a transaction which burns some amount of native coins and publicly discloses via the blockchain an \textit{asset descriptor} with the following information associated with the given asset:
 \begin{itemize}
     \item unique name, symbol, text description, etc.;
     \item emission parameters (like total or unlimited supply);
@@ -63,16 +70,19 @@ The initial emission of a token in Zano will be made through a transaction which
     \item etc.
 \end{itemize}
 
-The idea is to use a different amount-bonded generator $H_t=H_p(\textit{token\_descriptor\_t})$ for each token $t$ instead of the generator $H$. So the amount $a$ for the token $t$ is committed to in:
-\[  A_t = a H_p(\textit{token\_descriptor\_t}) + fG\]
+The idea is to use a different amount-bonded generator $H_t=H_p(\textit{asset\_descriptor\_t})$ \footnote{In \cite{conf_assets} such generators are called \textit{asset tags.}} for each asset $t$ instead of the generator $H$. So the amount $a$ for the asset $t$ is committed to in:
+\[  A_t = a H_p(\textit{asset\_descriptor\_t}) + fG\]
 
-\subsection{Hiding real token generator and range proofs}
-Let $X \in \mathbb{G}$ be another generator, i.e. has no efficiently-computable discrete logarithm relation with both $H$ and $G$. Then a typical transaction output would be represented by a tuple (hereinafter we omit output stealth address and encoded amount for simplicity):
+\subsection{Hiding real asset tag}
+Consider slightly tweaked asset tag hiding scheme. Let $X \in \mathbb{G}$ be another generator, i.e. has no efficiently-computable discrete logarithm relation with both $H$ and $G$. Then a typical transaction output would be represented by a tuple (hereinafter we omit output stealth address, encoded amount and other data for simplicity):
 \[
     ( \sigma^{rp}, T, A = aT + fG )
-\] where $T = H_t + rX = H_p(\textit{token\_descriptor\_t}) + rX $ is masked generator, $r = H_s(...)$ is a pseudo-random mask, known only to the output's owner and the sender, and $\sigma^{rp}$ is a range proof for the fact, that $a < 2^{64}$.
+\] where $T = H_t + rX = H_p(\textit{asset\_descriptor\_t}) + rX $ is blinded asset tag, $r = H_s(...)$ is a pseudo-random mask, known only to the output's owner and the sender, and $\sigma^{rp}$ is a range proof for the fact, that $a < 2^{64}$.
 
-We disclose the masked generator $T$ so blockchain observers can verify the range proof. We cannot disclose token-specific generator $H_t$ for the same purpose, because otherwise it would be possible for observers to learn the type of a corresponding token from it.
+Instead of disclosing asset tag $H_t$ for blockchain observers verification, we disclose the blinded asset tag $T$, because otherwise it would be possible for observers to learn the type of a corresponding asset from it.
+
+\subsection{Balance proof}
+Public verifiability that no assets are created or destroyed, while hiding both the output amounts and the output asset types, is retained with the help of balance proof, range proofs and asset tags surjection proof.
 
 For example, consider a RingCT transaction with two inputs and four outputs ($m=2, k=4$). Each of input refers to a ring of three outputs ($n=3$), and the second one is actually being spent.
 
@@ -99,7 +109,7 @@ For example, consider a RingCT transaction with two inputs and four outputs ($m=
 \end{tabularx}
 } \vspace{10pt}
 \\
-In this example input 0 corresponds to the native coin, and so output $E_2$ (note using $H_1$). Hence $a_1 = e_2 + \textit{fee}$\footnote{Here we assume that the transaction fee can only be paid in native tokens, and its plain unencoded value explicitly stated in transaction data.}. Input 1 corresponds to a token, associated with generator $H_4$, and outputs 0, 1, and 3 use the same token-associated generator $H_4$. Hence, $a_4 = e_0 + e_1 + e_3$. Thanks to homomorphism we can combine both equations into one using corresponding commitments:
+In this example input 0 corresponds to the native coin, and so output $E_2$ (note using $H_1$). Hence $a_1 = e_2 + \textit{fee}$\footnote{Here we assume that the transaction fee can only be paid in native tokens, and its plain unencoded value explicitly stated in transaction data.}. Input 1 corresponds to an asset, associated with generator $H_4$, and outputs 0, 1, and 3 use the same asset-associated generator $H_4$. Hence, $a_4 = e_0 + e_1 + e_3$. Thanks to homomorphism we can combine both equations into one using corresponding commitments:
 \begin{equation}\label{eq_A_main_sum}
     \sum_{i=0}^{m-1}{A^p_i} - \sum_{j=0}^{k-1}{E_j} - \text{fee}\cdot H_1 = rX + yG
 \end{equation}
@@ -107,104 +117,34 @@ where $m$ is the number of inputs, and $k$ is the number of outputs. Observers m
 Note, that $r'_j$ and $y_j$ are calculated using a shared secret ($r'_j = H_s(...), y_j = H_s(...)$) so output's receiver is able to calculate them.
 
 
-\subsection{Enforcing output commitments}
-Amount-bonded generators $T'_j$ in outputs have to be restricted by additional proof to prevent malicious use. Consider the following approach.
+\subsection{Asset tags surjection proof}
+Blinded asset tags $T'_j$ in outputs have to be restricted by additional proof to prevent malicious use. For that purpose we use asset surjection proof scheme from \cite{conf_assets}, later improved in \cite{lelantus_cla} with the help of logarithmic membership proof by Groth, Bootle at al. \cite{groth_how_to_leak_a_secret}\cite{bootle_short_ring_sig}\cite{bootle_groth_low_degree}. We also use the optimization, proposed in Section 1.3 in \cite{matrict}.
 
-For each output $E_j$ use a ring signature for a ring of public keys $\mathcal{R} = \{T^p_i - T'_j\},\; i = 0 \dots m-1, \; j = 0\dots k-1$ to prove knowing a DL secret $x$ with respect to $X$ for one of a public key in the ring:
+Given the set of pseudo output asset tags $\{T^p_i\}, \; i = 0 \dots m-1$ we prove that each output's asset tag $\{T'_j\}, \; j = 0\dots k-1$ corresponds to one of them, i.e. we prove knowing a DL secret $x$ with respect to $X$ for one of a public key in the set $\{T^p_i - T'_j\}$:
 \[ T^p_i - T'_j = xX \] (where $m$ is the number of inputs and $k$ is the number of outputs).
 
-In total, we need $k$ ring signatures, each having a ring of size $m$, so the estimated additional size is $km + 1$ scalars (the simplest case of non-aggregated ring signature).
+According to \cite{bootle_groth_low_degree}, communication costs can be estimated as $4.1 \sqrt{k \log m}$ group elements and the same amount of field elements. Number of group exponentiations on verification is $O(\sqrt{k} \log{km})$ 
 
+In contrast, using the simplest case of non-aggregated ring signature would require $km + 1$ field elements ($k$ ring signatures, each having a ring of size $m$ and a shared Fiat-Shamir challenge).
+
+\subsection{Range proof aggregation}
 Using different generators $T'_j$ for each output commitment requires additional steps to aggregate range proofs (otherwise we would need to use single range proof for each output which is very consuming). For each output commitment $E_j = e_j T'_j + y_j G$ we provide additional commitment to the same amount $E'_j = e_jU + y'_jG$ (where $U \in \mathbb{G}$ is another fixed generator with no efficiently-computable discrete logarithm relation with others), and a vector Schnorr proof of knowing DL $e_j, y''$ in
 \[ E_j - E'_j = e_j (T'_j - U) + y'' G\] which in total would require 1 group element $E'_j$ and 2 scalars per output, and one scalar for a shared Fiat-Shamir challenge and one aggregated range proof for all outputs.
 
-This approach does not link any outputs to inputs, but relatively space- and computational expensive. 
-
-\section{Variant B}
-
-\subsection{Basic idea}
-Let $t = H_s(\textit{token\_descriptor}) \in \mathbb{Z}_l$ be the token's unique public scalar identifier. Consider a corresponding commitment for amount $a$ having the following form:
-\[
-    A = aH + tX + fG
-\]
-where $H, X, G \in \mathbb{G}$ are group elements with no efficiently-computable discrete logarithm relation and $f \in \mathbb{Z}_l$ is a random blinding factor.
-Then a typical transaction output would be represented by a tuple:
-\[
-    ( \sigma^{rp}, A = aH + tX + fG )
-\]
-Where $\sigma^{rp}$ is a double-blinded range proof with respect to amount $a$ (for instance, using double-blinded extension of Bulletproofs+, suggested in Zarcanum whitepaper).
-
-Consider the same RingCT transaction as above with two inputs and four outputs $(m = 2, k = 4)$. Each of input refers to a ring of three outputs, and the second of each is actually being spent.
-\vspace{10pt}
-
-{\renewcommand{\arraystretch}{1.37}
-\noindent %\setlength\tabcolsep{0.5pt}
-\begin{tabularx}{0.9\textwidth} {| >{\hsize=0\hsize}X lcl|c|@{}}
-    \cline{1-5}
-    \# & Ring & \makecell{Pseudo output \\commitment} & \makecell{Ring signature\\ add. assertion} & Outputs \\
-    
-    \cline{1-5}
-    
-    \multirow{3}{*}{0} & $(\sigma^{rp}_0, A_0 = \;?)$ & \multirow{3}{*}{$A^p_0 = a_1H + t_1X + f'_1G$} & $A-A^p_0=\;?$ & \multirow{6}{*}{\makecell{$(\sigma'^{rp}_0, E_0 = e_0H + t_4X + y_0G)$ \\ \hline\\ $(\sigma'^{rp}_1, E_1 = e_1H + t_4X + y_1G)$\\\hline\\ $(\sigma'^{rp}_2, E_2 = e_2H + t_1X + y_2G)$\\\hline\\ $(\sigma'^{rp}_3, E_3 = e_3H + t_4X + y_3G)$}} \\
-    
-    & $(\sigma^{rp}_1, A_1 = a_1H+t_1X+f_1G)$ &  & $A-A^p_0=(f_1-f'_1)G$ & \\
-    & $(\sigma^{rp}_2, A_2 = \;?)$ &  & $A-A^p_0=\;?$ & \\
-    
-    \cline{1-4}
-    \multirow{3}{*}{1} & $(\sigma^{rp}_3, A_3 = \;?)$ & \multirow{3}{*}{$A^p_1 = a_4H + t_4X + f'_4G$} & $A-A^p_1=\;?$ & \\
-    & $(\sigma^{rp}_4, A_4 = a_4H+t_4X +f_4G)$ &  & $A-A^p_1=(f_4-f'_4)G$ & \\
-    & $(\sigma^{rp}_5, A_5 = \;?)$ &  & $A-A^p_1=\;?$ & \\
-    \cline{1-5}
-\end{tabularx}
-} \vspace{10pt}
-\\
-In this example, as before, input 0 corresponds to the native coin, and so output 2 (note using $t_1$). Input 1 corresponds to a token, associated with scalar $t_4$, and outputs 0, 1, and 3 use the same token-associated scalar $t_4$.
-Hence we need to prove that the following equations hold:\footnote{As above, we assume that the transaction fee can only be paid in native tokens, and its plain unencoded value explicitly stated in transaction data.}
-\begin{equation*}
-    \begin{aligned}
-    a_1 &= e_2 + \textit{fee} \\
-    a_4 &= e_0 + e_1 + e_3
-    \end{aligned}
-\end{equation*}
-This can be done by proving knowledge of DL secrets $r_0, r_1, y'_0, y'_1$ with respect to $X, G$ for each different token:
-\begin{equation*}
-    \begin{aligned}
-    A^p_0 - E_2 - \textit{fee}\cdot H &= r_0 X + y'_0 G \\
-    A^p_1 - E_0 - E_1 - E_3 &= r_1 X + y'_1 G 
-    \end{aligned}
-\end{equation*}
-or
-\begin{equation}\label{eq_B_main_sum}
-    \sum_{inputs(t)}{A^p_i} - \sum_{outputs(t)}{E_j} = r_iX + y'_iG
-\end{equation}
-
-where $inputs(t)$ and $outputs(t)$ are sets of inputs and outputs associated with the given token $t$.
-
-As each output $j$ is explicitly connected to some input $i$ with the proof, this approach has an obvious disadvantage of linking inputs and outputs of the same token, which decreases anonymity.
-
-
-\subsection{Enforcing input-output commitments linkage}
-To ensure that all $A^p_i$ and $E_j$ in Eq. \ref{eq_B_main_sum} correspond to the same token, the sender needs to prove that all of them have the same $tX$ component. To do that, the sender calculates a Schnorr-like proof of knowing DL secrets $x_h, x_g$ of $A^p_i - E_j$ with respect to $H, G$: 
-\[
-    A^p_i - E_j = x_hH + x_gG 
-\]
-for each pair of $A^p_i$, $E_j$ chain in Eq. \ref{eq_B_main_sum}. Having $m$ inputs, $k$ outputs and $n_T$ tokens in a transaction, we would need to use $m + k - n_t$ such proofs. Each such proof would require 2 scalars, and Fiat-Shamir challenge can be shared.
-
-\newpage
 
 \section{Possible attack vector and mitigation}
-Variant A is sensitive to cryptographic properties of the deterministic hash function $H_p$. Namely, we need to ensure that there's no efficiently-computable way to solve the following problem A:\\
+Asset tag concept is sensitive to cryptographic properties of the deterministic hash function $H_p$. Namely, we need to ensure that there's no efficiently-computable way to solve the following problem A:\\
 
 \textit{Problem A: Let $H_t = H_p(T_0)$. Given $H_t$ and $T_0$ find $x, y$ such that:
 \[ H_p(x) = y H_p(T_0) \] }
 
-Otherwise one would be able to generate arbitrary amount of tokens while still keeping Eq. \ref{eq_A_main_sum} hold.
+Otherwise one would be able to generate arbitrary amount of assets while still keeping Eq. \ref{eq_A_main_sum} hold.
 
-The complexity of brute force attacks (including MITM) can possibly be increased by using computational-expensive hash function $H_e$ to calculate token-specific generator $H_t$:
-\[ H_t = H_p(H_e(\textit{token\_descriptor\_t}))\]
-because normally the calculation of $H_t$ is rare operation and its result can be cached. 
+The complexity of brute force attacks (including MITM) can possibly be increased by using computational-expensive hash function $H_e$ to calculate asset-specific generator $H_t$:
+\[ H_t = H_p(H_e(\textit{asset\_descriptor\_t}))\]
+because normally the calculation of $H_t$ is a rare operation and its result can be cached. 
 
-\section{Size comparison}
+\section{Efficiency}
 
 Let's try to estimate size of the all signatures and proofs for a transaction with $m$ inputs (each having $n$ elements in its ring) and $k$ outputs.
 
@@ -217,32 +157,37 @@ Let's try to estimate size of the all signatures and proofs for a transaction wi
     \begin{tabularx} %{0.9\textwidth} {|l|l|l|@{}}
     {45em}{ @{} X | X | X @{} }
         \hline
-        Parameter & Variant A & Variant B \\
+        Parameter & $\mathbb{G}$ & $\mathbb{Z}_l$ \\
         \hline
-        Inputs (key images) & $m \; \mathcal{G}$ & $m \; \mathcal{G}$ \\
+        Inputs (key images) & $m$ &  \\
         %Inputs (decoy references) & $\approx 3mn$ bytes & $\approx 3mn$ bytes \\
-        Pseudo output commitments & $2m  \; \mathcal{G}$ & $m \; \mathcal{G}$ \\
+        Pseudo output commitments & $2m$ &  \\
         %\hline
-        Ring signature (CLSAG) & $(n+1)m\;\mathcal{S}$ \footnotemark & $(n+1)m \; \mathcal{S}$ \\
+        Ring signature (CLSAG) & & $(n+1)m$ \footnotemark   \\
         %\hline
-        Outputs' range proofs (BP+) & $(\mathcal{G} + 2\mathcal{S})k + \mathcal{S} + [(2 \cdot \ceil{\log_2(64) + \log_2(1)} + 3) \mathcal{G} + 3 \mathcal{S}]$ & $(2 \cdot \ceil{\log_2(64) + \log_2(k)} + 3) \mathcal{G} + 4 \mathcal{S}$ \footnotemark\\
+        Outputs' range proofs (BP+) & $k + [(2 \cdot \ceil{\log_2(64) + \log_2(1)} + 3) ]$ & 2k + 4 \\
         %\hline
-        Outputs' additional proofs & $(km + 1) \; \mathcal{S}$ \footnotemark & $(2(m + k - n_t )+1) \; \mathcal{S}$ \footnotemark \\ 
-        Outputs data (except proofs) & $(3 \; \mathcal{G} + 1 \; \mathcal{S})k$ & $(2 \; \mathcal{G} + 1 \; \mathcal{S})k$ \\ \hline
-        Total & \makecell[l]{$(3m+4k+15)\;\mathcal{G}$\\$((n+k+1)m+3k+5)\;\mathcal{S}$} & \makecell[l]{$(2m+2k+2\ceil{\log_2(k)}+15)\;\mathcal{G}$\\$((n+3)m+3k-2n_t+5)\;\mathcal{S}$} \\
+        Outputs' additional proofs & & $ $(km + 1) \footnotemark  \\ 
+        Outputs data (except proofs) & $3k$ & $k$ \\ \hline
+        Total & $3m+4k+15$ & $(n+k+1)m+3k+5$  \\
         \hline
     \end{tabularx}
-    \caption{\label{tab:size_comparison}Size comparison. $\mathcal{G}$ denotes group elements and $\mathcal{S}$ denotes field elements.}
+    \caption{\label{tab:size_comparison}Size comparison. $\mathbb{G}$ means the number of group elements, $\mathbb{Z}_p$ means the number
+of field elements.}
 \end{table}
 }
 \vspace{10pt}
 
-\addtocounter{footnote}{-3}
+\addtocounter{footnote}{-1}
 \footnotetext{CLSAG compresses all additional layers.}
 \addtocounter{footnote}{1}
-\footnotetext{One aggregated Bulletproofs+ proof with double-blinded commitments}
-\addtocounter{footnote}{1}
+%\footnotetext{One aggregated Bulletproofs+ proof with double-blinded commitments}
+%\addtocounter{footnote}{1}
 \footnotetext{A ring signature for each output.}
 \addtocounter{footnote}{1}
-\footnotetext{2-generators Schnorr proofs for each output with shared Fiat-Shamir challenge.}
+%\footnotetext{2-generators Schnorr proofs for each output with shared Fiat-Shamir challenge.}
+
+
+\printbibliography
+
 \end{document}
