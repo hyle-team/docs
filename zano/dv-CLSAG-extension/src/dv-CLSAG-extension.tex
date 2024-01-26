@@ -1,0 +1,437 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage[a4paper, total={6in, 8in}]{geometry}
+\usepackage{indentfirst}
+\usepackage{authblk} % affil
+\usepackage{graphicx} % images
+\usepackage{hyperref}
+
+\usepackage[style=numeric]{biblatex}
+\usepackage[dvipsnames]{xcolor}
+
+\usepackage{amsmath}
+\usepackage{amsthm} % proof environment
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\newtheorem{theorem}{Theorem}%[section]
+\newtheorem{corollary}{Corollary} %[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}{Definition}
+\newenvironment{claim}[1]{\par\noindent\underline{Claim:}\space#1}{}
+\newenvironment{claimproof}[1]{\par\noindent\underline{Proof:}\space#1}{$\square$}
+\usepackage{mathtools} % coloneqq
+\usepackage[capitalise]{cleveref} % cref
+\usepackage{nicefrac} % nicefrac
+
+\usepackage{caption}
+\usepackage[shortlabels]{enumitem}
+\usepackage{float}
+\usepackage{listings}
+
+ % highlighting
+\usepackage{soul}
+\definecolor{hlcolor}{HTML}{ffffcc}
+\definecolor{hl_gramma_color}{HTML}{ffeeff}
+\definecolor{hl_math_typo_color}{HTML}{eeffff}
+\sethlcolor{hlcolor}
+\DeclareRobustCommand{\hlc}[2]{{\sethlcolor{#1}\hl{#2}}} % highlight using custom color: \hlc{green}{some text}
+\newcommand{\hlg}[1]{#1}
+\newcommand{\mhl}[1]{\setlength{\fboxsep}{0pt}\colorbox{hlcolor}{$\displaystyle #1$}}
+\newcommand{\mhlt}[1]{\setlength{\fboxsep}{0pt}\colorbox{hl_math_typo_color}{$\displaystyle #1$}}
+
+\newcommand{\setcounterprefix}[2]{%
+  \setcounter{#1}{0}%
+  \expandafter\def\csname theH#1\endcsname{#2.\arabic{#1}}% ...if you're loading hyperref
+  \expandafter\def\csname the#1\endcsname{#2.\arabic{#1}}%
+}
+
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+
+%\usepackage{showframe} % for show text borders
+
+\usepackage{tabularx, boldline, makecell} % tables
+\usepackage{bm} % for \bm math bold
+\usepackage{afterpage} % for special pages geometry
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=blue,
+  urlcolor=blue,
+  citecolor=OliveGreen
+}
+\urlstyle{same}
+\setlength{\parindent}{2em}
+\setlength{\parskip}{1ex}
+%\captionsetup[figure]{labelfont={bf},name={Fig.},labelsep=period}
+\numberwithin{figure}{section}
+
+\begin{filecontents}{references.bib}
+@misc{clsag,
+  author = "Brandon Goodell and Sarang Noether and Arthur Blue",
+  title = "Concise Linkable Ring Signatures and Forgery Against Adversarial Keys",
+  year = "2019",
+  note = {\url{https://eprint.iacr.org/2019/654.pdf}}
+},
+@misc{lsag_adhoc,
+  author = {Joseph K.  Liu and Victor K.  Wei and Duncan S.  Wong},
+  title = {Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups},
+  year = {2004},
+  note = {\url{https://eprint.iacr.org/2004/027}}
+},
+@misc{zarcanum,
+    author = {sowle and koe},
+    title = {Zarcanum: A Proof-of-Stake Scheme for Confidential Transactions with Hidden Amounts},
+    year = {2021},
+    note = {\url{https://eprint.iacr.org/2021/1478.pdf}}
+}
+\end{filecontents}
+\addbibresource{references.bib}
+
+\title{\nicefrac{d}{v}-CLSAG:\\Extension for Concise Linkable Spontaneous Anonymous Group Signatures}
+
+\author{\large{sowle}\textsuperscript{1}}
+\affil{\small{
+    \textsuperscript{1}Zano project, \texttt{val@zano.org}
+}}
+
+\date{January 2024\footnote{Version: 1.0. Last update: 2024-01-26.}}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\maketitle
+
+%\begin{abstract}
+%We present a Schnorr-like linkable ring signature scheme we call \nicefrac{d}{v}-CLSAG that is extension for d-CLSAG scheme proposed earlier. The extension allows the use of different group generators for different layers of the ring members, while the original scheme assumes the use of the same generator G across all layers. We also provide the security statements for the proposed updated scheme.
+%\end{abstract}
+
+\section{Introduction}
+In this paper we present a Schnorr-like linkable ring signature scheme we call \nicefrac{d}{v}-CLSAG that is extension for d-CLSAG scheme proposed in \cite{clsag}. The proposed extension allows the use of different group generators for different layers of the ring members: $\bm{pk} \coloneqq \bm{sk} \circ \bm{G},\ \bm{G} = (G_{k_0},\dots,G_{k_{d-1}}) \in \texttt{G}^d$, while the original scheme assumes the use of the same generator $G$ across all layers: $\bm{pk} \coloneqq \bm{sk} \circ \bm{G},\ \bm{G} = (G,\dots,G) \in \texttt{G}^d$. To improve the signature size we use key aggregation techniques in the same way, but for distinct group generators $\{G_k\}$ individually. Note, that we don't require the absence of efficiently-computable discrete logarithm relations between $\{G_k\}$. However, it might be possible, that adding such a limitation would allow us to reduce the signature size. This is the subject of future studies. 
+
+We provide the security statements for the proposed updated scheme in \cref{t_2}, \cref{t_3}, and \cref{t_4}. The proofs mostly correspond to the original proofs in \cite{clsag}. We use the same numeration for theorems, definitions, and lemmas as in the original work. For the reader’s convenience, all changes are highlighted.
+
+\section{Application}
+\nicefrac{d}{v}-CLSAG may be used in cases when different group generators for different ring layers are necessary.
+
+For instance, in the Zano project a user can transfer an arbitrary number of assets within a single transaction. The method used for implementing the assets requires using 2 distinct generators, $G$ and $X$, in a 3-layer arrangement $(G, G, X)$ for a normal transaction and in a 5-layer arrangement $(G, G, X, X, G)$ for a Proof-of-Stake mining transaction (see also \cite{zarcanum}) for all ring members. Using \nicefrac{3}{2}-CLSAG and \nicefrac{5}{2}-CLSAG correspondingly in that context solves the problem, while the signature size is increased by only $n$ scalar elements, where $n$ is the ring size.
+
+\section{\nicefrac{d}{v}-CLSAG construction}
+\setcounter{definition}{9}
+\setcounter{theorem}{1}
+
+\begin{definition}[\nicefrac{d}{v}\textbf{-CLSAG}] \label{d_dclsag}
+    The tuple (\textsc{Setup, KeyGen, Sign, Verify, Link}) as follows is a d-LRS signature scheme.
+    \begin{itemize}
+       \item[--] \textsc{Setup} $\rightarrow$ par. First, \textsc{Setup} selects a prime p, a group \texttt{G} with prime order p, selects d cryptographic hash functions $\mathcal{H}^s_0, \dots , \mathcal{H}^s_{d-1}$ (modeled as random oracles) with codomain $\texttt{F}_p$, \hl{selects $v$ group generators $G_0, \dots, G_{v-1} \in \texttt{G}$, where $v \leq d$} uniformly at random\hl{, selects surjection $g:[0, d-1] \rightarrow [0, v-1]$ that maps indices of elements of $\bm{G}$ to the corresponding generators}, selects a cryptographic hash function $\mathcal{H}^p$ with codomain \texttt{G}. Then, \textsc{Setup} outputs the group parameter tuple and the hash functions:\\ $par~\coloneqq~(p, \texttt{G}, d, \mhl{v, g, \{G_k\}_{k=0}^{v-1}}, \{\mathcal{H}^s_j\}^{d-1}_{j=0}, \mathcal{H}^p)$.\footnote{Note that domain separation can be used here to take one $\mathcal{H}^s$ and construct each $\mathcal{H}^s_j$ by defining $\mathcal{H}^s_j(x)~\coloneqq~\mathcal{H}^s(j~\parallel~x)$.}
+
+       \item[--] \textsc{KeyGen} $\rightarrow$ (\textbf{sk, pk}). When required for a new key, \textsc{KeyGen} samples a fresh secret key and computes the associated public key:
+       \begin{align*}
+           \textbf{sk} &= (z_0,z_1,\dots,z_{d-1}) \leftarrow (\texttt{F}^*_p)^d
+           \\
+           \textbf{pk} &\coloneqq \textbf{sk} \circ \textbf{G} = (Z_0, Z_1, \dots, Z_{d-1}) \in \texttt{G}^d
+        \end{align*}
+        where $\textbf{G} = \mhl{(G_{g(0)}, \dots, G_{g(d-1)})} \in \texttt{G}^d$. \textsc{KeyGen} outputs (\textbf{sk, pk}). We say $z_0$ is the linking key, the remaining keys ${z_j}_{j=1}^{d-1}$ are the auxiliary keys, and we denote the linking key with x.
+
+        \item[--] \textsc{Sign}$(m, Q, \textbf{sk}) \rightarrow \{\bot_{Sign}, \sigma\}$. \textsc{Sign} takes as input a message $m \in \{0, 1\}^*$, a ring $Q = (\textbf{pk}_0,\dots,\textbf{pk}_{n-1})$ for ring members $\textbf{pk}_i = (\mhl{Z_{i,0}, \dots, Z_{i,d-1}}) \in \texttt{G}^d$, and a secret key $\textbf{sk} = (\mhl{z_0, \dots, z_{d-1}}) \in (\texttt{F}_p^*)^d$. \textsc{Sign} does the following.
+        \begin{enumerate}
+            \item If $Q \nsubseteq \texttt{G}^{d \times n}$ for some $n$, \textsc{Sign} outputs $\bot_{Sign}$ and terminates.
+
+            \item Otherwise, \textsc{Sign} parses\footnote{Note that this parsing always succeeds if \textsc{Sign} does not fail in the previous step.} $Q$ to obtain each $\textbf{pk}_i$. If the public key associated with the input \textbf{sk} is not a ring member in $Q$, then \textsc{Sign} outputs $\bot_{Sign}$ and terminates.
+
+            \item Otherwise, \textsc{Sign} finds the signing index $l$, such that $\textbf{pk}_l = \textbf{sk} \circ \mhl{(G_{g(0)}, \dots, G_{g(d-1)})}$. \textsc{Sign} samples $\mhl{ \{\alpha_k\}_{k=0}^{v-1} \in (\texttt{F}_p)^v}$ uniformly at random, samples $\mhl{\{s_{k,i}\}_{k=0,i \neq l}^{v-1} \in (\texttt{F}_p)^{v(n-1)}}$ uniformly at random, and computes the group elements $H_i = \mathcal{H}^p(X_i)$ for each $i$. \textsc{Sign} computes the aggregation coefficients $\mhl{\{\mu_j\}_{j=0}^{d-1}}$, the linking tag $\mathfrak{T}$, the auxiliary group elements $\{\mathfrak{D}_j\}_{j=1}^{d-1}$, and the aggregated public keys:
+            
+            \vspace{-9pt}
+            {%\begin{table}[ht]
+                \centering
+                \begin{tabularx}{0.9\textwidth}
+                {>{\hspace{0pt}\vspace{0pt}\raggedright\arraybackslash}X 
+                >{\hspace{0pt}\vspace{0pt}\raggedright\arraybackslash}X}
+                    \[\begin{aligned}
+                        &\mhl{\mathfrak{T} \coloneqq \mathfrak{D}_0} \; , \quad \{\mathfrak{D}_j\} \coloneqq \{z_j H_l\} \\
+                        &\mhl{W_{k,i} \coloneqq \sum_{\forall j: g(j)=k}{\mu_j Z_{i,j}} }
+                    \end{aligned}\]
+                    &
+                    \[\begin{aligned}
+                        &\mu_j \coloneqq \mathcal{H}_j^s(Q \parallel \mathfrak{T} \parallel \{\mathfrak{D}_j\}_{j=1}^{d-1}) \\
+                        &\mhl{\mathfrak{W}_k \coloneqq \sum_{\forall j:g(j)=k}{\mu_j \mathfrak{D}_j} }
+                    \end{aligned}\]
+                \end{tabularx}
+            }%\end{table}
+            
+            %\vspace{-0.5cm}
+            and the aggregated secret key\hl{s}:
+            
+            \[\mhl{ w_k \coloneqq  \sum_{j:g(j)=k}{\mu_j z_j} }\]
+            
+            For $i = l, l+1, \dots, l-1,$ (operating modulo $n$), \textsc{Sign} computes:
+            
+            \vspace{-9pt}
+            { 
+            %\begin{table}[h!]
+                \centering
+                \begin{tabularx}{0.8\textwidth}
+                {>{\hspace{0pt}\vspace{0pt}\raggedright\arraybackslash}X 
+                >{\hspace{0pt}\vspace{0pt}\raggedright\arraybackslash}X
+                >{\hspace{0pt}\vspace{0pt}\raggedright\arraybackslash}X
+                }
+                    \[\begin{aligned}
+                        L_{k,l} &= \alpha_k G_k \\
+                        L_{k,i} &= s_{k,i} G_k + c_i W_{k,i}
+                    \end{aligned}\]
+                    &
+                    \[\begin{aligned}
+                        R_{k,l} &= \alpha_k H_l  \\
+                        R_{k,i} &= s_{k,i} H_i + c_i \mathfrak{W}_k
+                    \end{aligned}\]
+                    &
+                    \[\begin{aligned}
+                        c_{l+1} &= \mathcal{H}_0^s(m \parallel Q \parallel \{L_{k,l}\}_{k=0}^{v-1} \parallel \{R_{k,l}\}_{k=0}^{v-1})  \\
+                        c_{i+1} &= \mathcal{H}_0^s(m \parallel Q \parallel \{L_{k,i}\}_{k=0}^{v-1} \parallel \{R_{k,i}\}_{k=0}^{v-1})
+                    \end{aligned}\]
+                \end{tabularx}
+            %\end{table}
+            }
+            %\vspace{-0.5cm}
+            
+            and lastly computes
+            \[ \mhl{ \{s_{k,l}\} = \{\alpha_k - c_l w_k\}_{k=0}^{v-1} } \]
+
+            \item \textsc{Sign} returns the signature $\sigma = (c_0, \mhl{\{s_{k,i}\}_{k=0,i=0}^{v-1,n-1}}, \mathfrak{T}, \{\mathfrak{D}_j\}_{j=1}^{d-1})$.
+        \end{enumerate}
+
+    \item[--] $\textsc{Verify}(m, Q, \sigma) \rightarrow \{0, 1\}$. \textsc{Verify} takes as input a message $m$, a matrix $Q = (\textbf{pk}_0, \dots, \textbf{pk}_{n-1})$, and a signature $\sigma$.
+
+    \begin{enumerate}
+        \item If $Q \nsubseteq \texttt{G}^{d \times n}$ for some $n$, of if $\sigma \notin \texttt{F}_p^{\mhl{n'v'}+1} \times \texttt{G}^d$ for some $n'\mhl{, v'}$, \textsc{Verify} outputs 0 and terminates. Otherwise, if $n' \neq n$ \hl{or $v' \neq v$}, \textsc{Verify} outputs 0 and terminates.
+
+        \item \textsc{Verify} parses\footnote{This parsing is always successful if the previous step does not terminate \textsc{Verify}.} $(\textbf{pk}_0, \dots, \textbf{pk}_{n-1}) \leftarrow Q$ for keys $\textbf{pk}_i \in \texttt{G}^d$ for $i \in [0, n-1]$, and parses each public key $(\mhl{Z_{i,0}, \dots, Z_{i, d-1}}) \leftarrow \textbf{pk}_i$. \textsc{Verify} also parses $(c_0, \mhl{\{s_{k,i}\}_{k=0,i=0}^{v-1,n-1}}, \mathfrak{T}, \{\mathfrak{D}_j\}_{j=1}^{d-1}) \leftarrow \sigma$. \textsc{Verify} computes each $H_i = \mathcal{H}^p(X_i)$, computes the aggregation coefficients, and computes aggregated public keys:
+
+        \vspace{-9pt}
+        {%\begin{table}[ht!]
+            \centering
+            \begin{tabularx}{0.9\textwidth}
+            {>{\hspace{0pt}\vspace{0pt}\raggedright\arraybackslash}X 
+            >{\hspace{0pt}\vspace{0pt}\raggedright\arraybackslash}X
+            }
+            \[\begin{aligned}
+                    &\mhl{\mathfrak{T} \coloneqq \mathfrak{D}_0} \; , \quad \{\mathfrak{D}_j\} \coloneqq \{z_j H_l\} \\
+                    &\mhl{W_{k,i} \coloneqq \sum_{\forall j: g(j)=k}{\mu_j Z_{i,j}} }
+                \end{aligned}\]
+                &
+                \[\begin{aligned}
+                    &\mu_j \coloneqq \mathcal{H}_j^s(Q \parallel \mathfrak{T} \parallel \{\mathfrak{D}_j\}_{j=1}^{d-1}) \\
+                    &\mhl{\mathfrak{W}_k \coloneqq \sum_{\forall j:g(j)=k}{\mu_j \mathfrak{D}_j} }
+                \end{aligned}\]
+            
+            \end{tabularx}
+        }%\end{table}
+
+        %\vspace{-20pt}
+        \item \textsc{Verify} sets $c'_0 \coloneqq c_0$ and, for $i = 1, 2, \dots, n-1$, computes the following.
+        %\vspace{-0.8cm}
+        
+        \[\begin{aligned}
+            \mhl{\{L_{k,i}\}} &\mhl{\coloneqq \{s_{k,i} G_k + c'_i W_{k,i}\}}
+            \\
+            \mhl{\{R_{k,i}\}} &\mhl{\coloneqq \{s_{k,i} H_i + c'_i \mathfrak{W}_k\}}
+            \\
+            \mhl{c'_{i+1}} &\mhl{\coloneqq \mathcal{H}_0^s(m \parallel Q \parallel \{L_{k,i}\}_{k=0}^{v-1} \parallel \{R_{k,i}\}_{k=0}^{v-1})}
+        \end{aligned}\]
+    
+        \vspace{9pt}
+        
+        \item If $c'_n = c_0$, \textsc{Verify} outputs $1$, and otherwise outputs $0$.
+    \end{enumerate}
+
+    \item[--] \textsc{Link}$((m, Q, \sigma), (m', Q', \sigma')) \rightarrow \{0, 1\}$. \textsc{Link} takes as input two message-ring-signature triples.
+    \begin{enumerate}
+        \item If \textsc{Verify}$(m, Q, \sigma) = 0$ or \textsc{Verify}$(m', Q', \sigma') = 0$, \textsc{Link} outputs $0$ and terminates.
+        \item Otherwise, \textsc{Link} parses\footnote{As before with \textsc{Verify}, this parsing is always successful if the previous step does not terminate \textsc{Link}.} the signatures to obtain the individual linking tags $(\mathfrak{T}, \{\mathfrak{D}_j\}_j), (\mathfrak{T}', \{\mathfrak{D}'_j\}_j) \leftarrow \sigma, \sigma'$. \textsc{Link} outputs $1$ if $\mathfrak{W} = \mathfrak{W}'$ and $0$ otherwise.
+    \end{enumerate}
+
+    \textnormal{This implementation has \textit{full-key-oriented} linkability with linkability tags $\mathfrak{W}$: two signatures will link if they not only are signed using the same linking and auxiliary keys, but also the same ring. We can replace the \textsc{Link} algorithm with \textit{single-key-oriented} linkability}:
+    
+    \item[--] \textsc{Link}$((m, Q, \sigma), (m', Q', \sigma')) \rightarrow \{0, 1\}$. \textsc{Link} takes as input two message-ring-signature triples.
+    \begin{enumerate}
+        \item If \textsc{Verify}$(m, Q, \sigma) = 0$ or \textsc{Verify}$(m', Q', \sigma') = 0$, \textsc{Link} outputs $0$ and terminates.
+        \item Otherwise, \textsc{Link} parses\footnote{As before with \textsc{Verify}, this parsing is always successful if the previous step does not terminate \textsc{Link}.} the signatures to obtain the individual linking tags $(\mathfrak{T}, \{\mathfrak{D}_j\}_j), (\mathfrak{T}', \{\mathfrak{D}'_j\}_j) \leftarrow \sigma, \sigma'$. \textsc{Link} outputs $1$ if $\mathfrak{T} = \mathfrak{T}'$ and $0$ otherwise.
+    \end{enumerate}
+        
+    \end{itemize}
+    
+\end{definition}
+
+\section{Proofs of Security}
+
+\begin{lemma}
+For any $Q \subseteq \mathcal{PK}$, for any private key $\mhl{sk = (\{z_j\}_j)} \in Q$, the map \hl{$sk \rightarrow \sum_j{\mu_j z_j}$} where $\mu_j$ are computed as in \cref{d_dclsag} is a collision-resistant function.
+\end{lemma}
+
+\setcounter{theorem}{1}
+
+\begin{theorem}[\textbf{Hardness of Discrete Logarithms of Linear Combinations Implies Unforgeability}] \label{t_2}
+If a $(t, \epsilon, q)$-solver of the unforgeability exists for the scheme of \cref{d_dclsag} that makes $\kappa'$ corruption oracle queries, then there exists a $(2(t + t_0) + t_1), \epsilon(\frac{\epsilon}{q} - \frac{1}{2^\eta})-\mu, \floor{\frac{q}{d}}$-solver of the $2d\kappa'$-one-more discrete logarithm of linear combinations problem in \texttt{G} for some negligible $\mu$ and some constants $t_0, t_1$.
+\end{theorem}
+\begin{claimproof}
+Assume \texttt{A} is a $(t, \epsilon, q)$-solver of the non-slanderability game of Definition 8. We wrap \texttt{A} in an algorithm \texttt{B}. The algorithm \texttt{B} executes \texttt{A} in a black box, handling oracle queries for \texttt{A}. Then, \texttt{B} regurgitates the output of \texttt{A} together with an index $idx$. This way, \texttt{B} is sutable for use in the forking lemma. We wrap $\mathcal{F}^B$ in a master algorithm \texttt{M} that is a $(2(t + t_0) + t_1), \epsilon(\frac{\epsilon}{q} - \frac{1}{2^\eta})-\mu, \floor{\frac{q}{d}}$-solver of the $\kappa$-one-more discrete logarithm of linear combinations problem in \texttt{G}, where $\eta$ is as defined in Lemma 1.
+
+If \texttt{A} produces a successful forgery, each verification query of the form \[c_{l+1} = \mhl{\mathcal{H}^s(m \parallel Q \parallel \{L_{k,l}\}_{k=0}^{v-1} \parallel \{R_{k,l}\}_{k=0}^{v-1})}\] occurs in the transcript between \texttt{A} and the random oracle $\mathcal{H}^s$. Indeed, the signature triple produced by \texttt{A} passes verification, so each challenge $c_{l+1}$, whether made with oracle queries in the transcript or not, must be matched by random oracle queries made by the verifier. The prover cannot guess the output of such a query before making it except with negligible probability. Hence, if \texttt{A} outputs a valid signature, all verification challenges are computed by an actual oracle query. See \cite{lsag_adhoc} for a formal proof of this fact. Since all verification challenges are found through genuine oracle queries, which are well-ordered, there exists a first $\mathcal{H}^s$ query made by \texttt{A} for computing verification challenges, say $c = \mathcal{H}^s(m \parallel Q \parallel \mhl{\{L_k^*\}} \parallel \mhl{\{R_k^*\}})$. This was not necessarily the first query made to $\mathcal{H}^s$ overall, though; say it was the $\mhl{a^{th}}$ query. Although the ring index for this query may not have been decided when this query was first issued by \texttt{A}, be the end of the transcript the ring index has been decided.
+
+We construct \texttt{B} in the following way. We grant \texttt{B} access to the same oracles as \texttt{A}. Any oracle queries made by \texttt{A} are passed along by \texttt{B} to the oracles. The responses are recorded and then passed back to \texttt{A}. The algorithm \texttt{B} works by finding two indices to augment the output of \texttt{A}. First, \texttt{B} finds the $\mathcal{H}^s$ query index $\mhl{a}$ corresponding to the first verification challenge computed by \texttt{A} used in verifying the purported forgery. Second, \texttt{B} inspects the transcript of \texttt{A} to find the anonymity set index $l$ in the transcript such that $c = c_{l+1}$ and $\mhl{\{R_k^{*}\} = \{R_{k,l}\}}$ and $\mhl{\{L_k^{*}\} = \{L_{k,l}\}}$. Now \texttt{B} outputs $idx = (\mhl{a}, l)$ along with whatever \texttt{A} outputs. Clearly, \texttt{B} makes the same number of corruptions oracle queries as \texttt{A}.
+
+Note \texttt{B} succeeds whenever \texttt{A} does and runs in time at most $t$ just like \texttt{A}, except for some additional time $t_0$ to search the transcript for $idx$. Since \texttt{B} is suitable for use in the forking lemma, we can use $\mathcal{F}^B$ to construct \texttt{M}.
+
+The algorithm $\mathcal{F}^b$ is granted oracle access to the same oracles as \texttt{B} except $\mathcal{H}^s$ and \texttt{SO}. The algorithm $\mathcal{F}^B$ simulates \texttt{SO} queries made by \texttt{B} by simple back-patching of $\mathcal{H}^s$ and simulates the other queries made to $\mathcal{H}^s$ queries made by \texttt{B} using the random tapes \textbf{h, h*} as described in Section 3.1. All other oracle queries made by \texttt{B} are passed along by $\mathcal{F}^B$ to the actual oracles and handed back to \texttt{B}.
+
+Note that $\mathcal{F}^B$ runs in time $2(t + t_0)$ and (with probability at least $\epsilon (\frac{\epsilon}{q} - \frac{1}{2^\eta})$) outputs a pair of valid signature triples $(m, Q, \sigma), (m', Q', \sigma')$. The messages and anonymity sets are selected before the fork point in the transcripts, so $m = m'$ and $Q = Q'$. Moreover, $\mathcal{F}^B$ makes at most $2\kappa'$ corruption queries. The challenges for the two transcripts are distinct since the forking algorithm outputs the failure symbol $\bot$ and terminates if the challenges for $c_{l+1}$ are the same in each transcript.
+\[
+c_{l+1} \leftarrow \mathcal{H}_0^s(\mhl{m \parallel Q \parallel \{L_{k,l}\}_{k=0}^{v-1} \parallel \{R_{k,l}\}_{k=0}^{v-1})}) \rightarrow c'_{l+1} 
+\]
+We wrap $\mathcal{F}^B$ in an algorithm \texttt{M} that plays the $\kappa$-one-more discrete logarithm game of Definition 1 for $\kappa = 2 \cdot d \cdot \kappa'$. The algorithm \texttt{M} has corruption oracle access and runs $\mathcal{F}^B$ in a black box, passing corruption oracle queries made by $\mathcal{F}^B$ along. The algorithm \texttt{M} finds the following system of equations in the transcripts by inspecting the verification challenge queries:
+\[\mhl{\begin{aligned}
+    \{L_{k,l}\} = \{s_{k,l} G_k + c_l W_{k,l}\} &= \{s'_{k,l} G_k + c'_l W_{k,l}\} \\
+    \{R_{k,l}\} = \{s_{k,l} H_l + c_l \mathfrak{W}_k\} &= \{s'_{k,l} H_l + c'_l \mathfrak{W}_k\}
+\end{aligned}}\]
+This \texttt{M} has enough information to compute
+\[\mhl{
+    \{W_{k,l}\} = \left\{\frac{s_{k,l} - s'_{k,l}}{c'_l - c_l} G_k\right\}, \quad \{\mathfrak{W}_k\} = \left\{\frac{s_{k,l} - s'_{k,l}}{c'_l - c_l} H_l\right\}
+}\]
+and therefore the private key\hl{s} $\mhl{w_k = \frac{s_{k,l} - s'_{k,l}}{c'_l - c_l}}$.
+
+\noindent
+Formally, \texttt{M} operates as follows.
+
+{
+    \renewcommand\labelenumi{(\theenumi)}
+    \begin{enumerate}
+        \item \texttt{M} inputs the set of discrete logarithm challenge public keys $S = \Big\{ \widetilde{pk}_i \Big\}_{i=0}^{q-1}$.
+
+        \item \texttt{M} partitions the challenge keys into lists of $d$ keys
+        \[\begin{aligned}
+            pk_0 = &(Z_{0,0}, \dots, Z_{0,d-1}) &&\coloneqq (\widetilde{pk}_0, \dots, \widetilde{pk}_{d-1}) \\
+            pk_1 = &(Z_{1,0}, \dots, Z_{1,d-1}) &&\coloneqq (\widetilde{pk}_d, \dots, \widetilde{pk}_{2d-1}) \\
+            &\vdots
+        \end{aligned}\]
+        obtaining $S \coloneqq \{pk_i\}_{i=0}^{\floor{\frac{q}{d}}}$.
+
+        \item \texttt{M} picks two random tapes \textbf{h, h'} to simulate oracle query responses for $\mathcal{F}^B$.
+
+        \item \texttt{M} executes $\mathcal{F}^B$ in a black box, using $S$ as input. Upon receiving a corruption query from $\mathcal{F}^B$ on some $pk_i$, \texttt{M} makes a \texttt{CO} query on each $Z_{j,i}$ passing $sk_i$ back to $\mathcal{F}^B$. Each corruption query made by $\mathcal{F}^B$ consists of $d$ corruption queries made to \texttt{CO} by \texttt{M}.
+
+        \item If $\mathcal{F}^B$ fails, or if $\mathcal{F}^B$ succeeds with all zero coefficients $\mhl{\mu_j}$, then \texttt{M} samples random \hl{$\{w_k\} \in (\texttt{F}_p)^v$}, samples a random subset of challenge keys $\{pk_j^*\}_j \subseteq S$, samples random coefficients $\{h_j\}_j$, outputs $\mhl{\{w_k\}}, \{pk_j^*\}_j, \{h_j\}_j$, and terminates.
+
+        \item Otherwise, \texttt{M} obtains two signature triples with the same message and ring, $(m, Q, \sigma), (m, Q, \sigma')$ at at least one non-zero aggregation coefficient. \texttt{M} computes the challenge discrete logarithm\hl{s $w_k = \frac{s_{k,l} - s'_{k,l}}{c'_l - c_l}$}. \texttt{M} outputs $\mhl{w_k, \{\mu_j\}_j}$, and $\mhl{\{Z_{l,j}\}_j}$.
+    \end{enumerate}
+}
+
+Denote with $t_1$ the time it takes for \texttt{M} to inspect the transcript, perform field operations, and process corruption queries for $\mathcal{F}^B$. Then the algorithm \texttt{M} runs in time at most $2(t + t_0) + t_1$.
+
+To complete the proof, consider the overall success probability and timing of \texttt{M}. Since \texttt{A} is a $(t, \epsilon, q)$-solver of the unforgeability game and these are successful signatures, there must be at least one query made to \texttt{SO} corresponding to an uncorrupted challenge key linking to these signatures. In particular, \hl{$w_k \cdot G_k = W_{k,l} = \sum_{j:g(j)=k}{\mu_j Z_{l,j}}$} for some $\mhl{(\{Z_{l,j}\}_j)} \in Q$. The algorithm \texttt{M} succeeds at forking \texttt{B} and at least one coefficient $\mhl{\mu_j}$ is non-zero; we denote the probability of obtaining any zero coefficients as $\mu$. We note that $\mu$ is negligible under the random oracle model. Thus, \texttt{M} runs in time at most $2(t + t_0) + t_1$, has success probability exceeding $\epsilon (\frac{\epsilon}{q} - \frac{1}{2^\eta}) - \mu$.
+\end{claimproof}
+
+The proof of \cref{t_2} demonstrates that the validity of a triple implies that the aggregated private key\hl{s $w_k$ are} the discrete logarithms of the aggregated linking tag\hl{s $\mathfrak{W}_k$} with respect to $H_l$ and \hl{are} also the discrete logarithm\hl{s} of the aggregated key\hl{s $W_{k,l}$} with respect to $\mhl{G_k}$. In this way, the linking tag of a valid signature must be the linking tag corresponding to at least one ring member, except possibly with negligible probability.
+
+\vspace{10pt}
+
+\begin{corollary}[\textbf{No Alien Linking Tags}]
+If there exists a PPT algorithm \texttt{A} that produces a valid signature triple $(m, Q, \sigma)$ with the scheme in \cref{d_dclsag}, then there exists a ring member in $Q$ whose aggregated key\hl{s $W_{k,l}$ have} the same discrete logarithm\hl{s $w_k$} with respect to $\mhl{G_k}$ as \hl{$\mathfrak{W}_k$ have} with respect to $H_l$, and \hl{these $w_k$ are} known to \texttt{A} (except possibly with negligible probability).
+\end{corollary}
+
+\vspace{10pt}
+
+\begin{theorem} \label{t_3}
+The scheme in \cref{d_dclsag} is linkable under Definition 5 and Definition 6.
+\end{theorem}
+\begin{proof}
+    We show that valid, non-oracle signature triples from the scheme in \cref{d_dclsag} satisfying the corrupted key conditions in the game of Definition 5 always link. Hence, any algorithm fails at that game except with negligible probability.
+
+    Assume that \texttt{A}, while playing the game of ACST linkability from Definition 5, produces a pair of valid, non-oracle signature triples $(m, Q, \sigma), (m^*, Q^*, \sigma^*)$ such that at most one key in $Q \cup Q^*$ is corrupted or outside of $S$. This algorithm can be forked and rewound as above to compute the aggregated private key used in computing each signature, say $\mhl{\bm{w}=\{w_{g(j)}\}, \bm{w^*}=\{w_{g(j)}^*\},\ j=0 \dots d-1}$. At most one key in $Q \cup Q^*$ is corrupted or outside of $S$. Since \texttt{A} has knowledge of $\mhl{\bm{w}}$, then $\mhl{\bm{w}}$ is corrupted or outside of $S$, and likewise $\mhl{\bm{w^*}}$ is corrupted or outside of $S$. Since at most one key in $Q \cup Q^*$ can be corrupted or outside of $S$, we conclude $\mhl{\bm{w} = \bm{w^*}}$.
+
+    Since key aggregation is preimage-resistant by its construction using hash functions and $\mhl{\bm{w} \circ \bm{G}}$ is the aggregated public key for some public key $\mhl{\bm{pk}_l = (\{Z_{l,j}\}_j)} \in Q \cap Q^*$, $\mhl{\bm{w}}$ must be aggregated from a private key $\mhl{(\{z_{l,j}\}_j)}$ using the aggregation function. In both the case of single-key-oriented linkability and full-key-oriented linkability, the linkability tags are therefore exactly equal. Hence, with probability 1, the pair of triples $(m, Q, \sigma), (m^*, Q^*, \sigma^*)$ are linked, and \texttt{A} fails at ACST linkability except with negligible probability.
+
+    Similarly, an algorithm that outputs $q+1$ unlinked signatures can be rewound to compute $2(q+1)$ signatures from which $q+1$ aggregated keys can be computed. Moreover, if these signatures are unlinked, then the $q + 1$ aggregated keys are distinct, violating $q$-pigeonhole linkability.
+\end{proof}
+
+\vspace{10pt}
+
+\begin{theorem} \label{t_4}
+If there exists a $(t, \epsilon, q)$-solver of the linkable anonymity game of Definition 9 under the construction of \cref{d_dclsag}, then there exists a $(t + t', \epsilon/2, q)$-solver of the RO-DDH\hl{\footnote{\hl{In this theorem and its proof we employ a slightly modified version of the RO-DDH (as defined in Definition 2), where the fixed generator $G$ is replaced with the fixed generator $G_{g(0)}$.}}} game of Definition 2 for some $t'$.
+\end{theorem}
+\begin{proof}
+Let \texttt{A} be such a solver of the linkable anonymity game. We will construct an algorithm \texttt{B} that executes \texttt{A} in a black box and is a solver of the RO-DDH game, acting as the challenger for \texttt{A}; the algorithm will pass on $\mathcal{H}^p$ random oracle queries to its own challenger, flip coins for $\mhl{\{\mathcal{H}_j^s\}}$ random oracle queries, and simulate signing oracle queries by backpatching. We assume that \texttt{B} keeps internal tables to maintain consistency between the random oracle queries needed to simulate signing oracle queries.
+
+The algorithm \texttt{B} operates as follows:
+\begin{itemize}
+    \item[--] \texttt{B} receives a set of tuples $\{(R_i, R'_i, R''_i)\}_{i=0}^{q-1}$ from its challenger, and chooses a bit $b' \in \{0, 1\}$ uniformly at random. Note that \texttt{B} does not know if its tuples are RO-DDH triples or not, as its challenger chose a secret bit $b \in \{0,1\}$ uniformly at random to determine this.
+
+    \item[--] For all $i \in [0; q)$, \texttt{B} defines $\mhl{Z_{i,0}} \coloneqq R_i$ and records the $\mathcal{H}^p$ oracle mapping $\mathcal{H}^p(\mhl{Z_{i,0}}) = R'_i$. It chooses $\{z_{i,j}\}_{j=1}^{d-1}$ from $\texttt{F}_p$ uniformly at random, and builds a set of public keys $S \coloneqq \{\mhl{(Z_{i,0}, z_{i,1}G_{g(1)}, \dots, z_{i,d-1}G_{g(d-1)})}\}_{i=0}^{q-1}$. \texttt{B} provides the set $S$ to \texttt{A}.
+
+    \item[--] \texttt{A} returns indices $0 \leq i_0,i_1 < q$ to \texttt{B}.
+
+    \item[--] \texttt{B} receives signing oracle queries of the form \texttt{SO}$(m, Q, pk)$, where $0 \leq l < q$ is the index of $pk \in Q, pk \in S$, and $|Q| = n$. There are two cases, which determine how \texttt{B} simulates the oracle response, flipping coins for $\mhl{\{\mathcal{H}_j^s\}}$ oracle queries:
+    \begin{enumerate}
+        \item If it is the case that $\{pk_{i_0}, pk_{i_1}\} \not\subset Q$ or $pk \notin \{pk_{i_0},pk_{i_1}\}$, then \texttt{B} proceeds with its signing oracle simulation using the key $pk$.
+
+        \item Otherwise, there exists a bit $c \in \{0, 1\}$ such that $pk = pk_{i_c}$. In this case, \texttt{B} sets $c' \coloneqq c \oplus b'$ and proceeds with its signing oracle simulation using the key $pk_{i_{c'}}$. This is, if $b' = 0$, then \texttt{B} simulates a signature using the requested key from the player-provided index set. If instead $b' = 1$, then \texttt{B} simulates a signature using the other key.
+    \end{enumerate}
+
+    In either case, \texttt{B} parses the public key set $Q$ provided by \texttt{A}. For any key $pk_i \coloneqq (\mhl{Z'_{i,0}, Z'_{i,1}, \dots, Z'_{i, d-1}}) \in Q \setminus S$, it makes oracle queries to its challenger to obtain $\mathcal{H}^p(\mhl{Z'_{i,0}})$. Then \texttt{B} simulates the signature:
+    
+    \begin{enumerate}
+        \item Define a map $\pi : [0, n) \rightarrow[0, q) \cup \{ \bot \}$ that maps indices of elements of $Q$ to the corresponding elements of $S$ (or returns the distinguished failure symbol $\bot$ for indices not mapping to elements of $S$), and let $0 \leq l < n$ be the index of $pk \in Q$.
+
+        \item Choose $c_l, \mhl{\{s_{k,i}\}_{k=0,i=0}^{v-1,n-1}} \in \texttt{F}_p$ uniformly at random.
+
+        \item Since $pk \in S$ by construction, $\pi(l) \neq \bot$. Set $\mathfrak{T} \mhl{\coloneqq \mathfrak{D}_0} \coloneqq R''_{\pi(l)}$ and $\{\mathfrak{D}_j\}_{j=1}^{d-1}$ such that each $\mathfrak{D}_j \coloneqq z_{\pi(l),j} \mathcal{H}^p(Z_{\pi(l),0})$.
+
+        \item Define the following:
+        \[\mhl{\begin{aligned}
+            \mu_j &\leftarrow \mathcal{H}_j^s(Q, \{\mathfrak{D}_j\}_{j=0}^{d-1}) \hspace{30pt} \text{for} \ j \in [0, d)
+            \\
+            W_{k,i} &\coloneqq \left\{ \begin{aligned}
+                &\sum_{j:g(j)=k} \mu_j Z_{\pi(i),j} \quad &(\pi(i) \neq \bot)
+                \\
+                &\sum_{j:g(j)=k} \mu_j Z'_{i,j} \quad &(\pi(i) = \bot)
+            \end{aligned}\right.
+            \\
+            \mathfrak{W}_k &\coloneqq \sum_{j:g(j)=k} \mu_j \mathfrak{D}_j
+        \end{aligned}}\]
+
+        \item For each $i = l, l+1, \dots, n-1, 0, \dots, l-1$ (that is, indexing modulo n), define the following:
+        \[\mhl{\begin{aligned}
+            L_{k,i} &\coloneqq s_{k,i} G_k + c_i W_{k,i}
+            \\
+            R_{k,i} &\coloneqq \left\{ \begin{aligned}
+                & s_{k,i} \mathcal{H}^p(Z_{\pi(i),0}) + c_i \mathfrak{W}_k \quad & (\pi(i) \neq \bot)
+                \\
+                & s_{k,i} \mathcal{H}^p(Z'_{i,0}) + c_i \mathfrak{W}_k \quad & (\pi(i) = \bot )
+            \end{aligned}\right.
+            \\
+            c_{i+1} &\leftarrow \mathcal{H}_0^s(m, Q, \{L_{k,i}\}_{k=0}^{v-1}, \{R_{k,i}\}_{k=0}^{v-1})
+        \end{aligned}}\]
+    
+        \item \texttt{B} returns to \texttt{A} the tuple $(c_0, \mhl{\{s_{k,i}\}_{k=0,i=0}^{v-1,n-1}, \{\mathfrak{D}_j\}})$.
+    \end{enumerate}
+
+    \item[--] \texttt{A} returns a bit $b^*$ to \texttt{B}.
+
+    \item[--] If $b^* = b'$, then \texttt{B} returns $0$ to its challenger. Otherwise, it returns 1.
+\end{itemize}
+
+It is the case that \texttt{B} wins the RO-DDH game precisely when it correctly guesses the bit $b$ chosen by its challenger. Hence $\mathbb{P}[\text{\texttt{B} wins}] = \frac{1}{2}\mathbb{P}[\texttt{B} \ \rightarrow \ 0 | b = 0] + \frac{1}{2}\mathbb{P}[\texttt{B} \ \rightarrow \ 1 | b = 1]$.
+
+if $b = 1$, then the RO-DDH challenger provided random points $\{R''_i\}$ that \texttt{B} used in its simulated signatures, so \texttt{A} can do no better than random chance at determining $b'$. Since $\texttt{B} \rightarrow 1$ exactly when \texttt{A} loses the linkable anonymity game, we have $\mathbb{P}[\texttt{B} \rightarrow 1 | b = 1] = \frac{1}{2}$.
+
+On the other hand, if $b = 0$, then the RO-DDH challenger provided structured tuples that \texttt{B} used in its simulated signatures, and \texttt{A} wins the linkable anonymity game with non-negligible advantage $\epsilon$ over random chance. Since $\texttt{B} \rightarrow 0$ exactly when \texttt{A} wins the linkable anonymity game, we have $\mathbb{P}[\texttt{B} \rightarrow 0 | b = 0] = \frac{1}{2} + \epsilon$.
+
+This means \texttt{B} wins the RO-DDH game with probability $\mathbb{P}[\text{\texttt{B} wins}] = \frac{1}{2} + \frac{\epsilon}{2}$ and has non-negligible advantage $\frac{\epsilon}{2}$. Further, \texttt{B} finishes with an added time $t'$ used in simulating oracle queries and performing lookups. Hence, \texttt{B} is a $(t + t', \epsilon/2, q)$-solver of the RO-DDH game.
+\end{proof}
+
+
+\printbibliography
+
+\end{document}
