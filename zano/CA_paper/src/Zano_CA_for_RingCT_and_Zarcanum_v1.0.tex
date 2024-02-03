@@ -1,0 +1,460 @@
+\documentclass{article}
+\usepackage[T2A]{fontenc}
+\usepackage[utf8]{inputenc}
+%\usepackage[russian]{babel}
+%\usepackage{natbib}
+\usepackage{authblk} % affil
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage[dvipsnames]{xcolor}
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue,
+  filecolor=blue,
+  urlcolor=blue,
+  citecolor=OliveGreen
+}
+\urlstyle{same}
+\usepackage{svg} % includesvg
+\usepackage{caption}
+\captionsetup[figure]{font=small,labelfont={bf},name={Fig.},labelsep=period}
+
+\usepackage{float}
+\usepackage{amsmath}
+%\usepackage{amsthm} % proof environment
+%\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{indentfirst}
+%\setlength{\parskip}{0pt plus 0.1pt}
+\usepackage[capitalise]{cleveref} % cref
+\usepackage{nicefrac} % nicefrac
+
+\usepackage{tabularx, boldline, makecell, multirow, tablefootnote} % tables
+
+% highlighting
+\usepackage{soul}
+\definecolor{hlcolor}{HTML}{ffffcc}
+\sethlcolor{hlcolor}
+
+\usepackage[a4paper, total={6in, 8in}, margin=0.9in,top=0.9in]{geometry}
+
+\usepackage[style=numeric]{biblatex}
+\addbibresource{references.bib}
+
+\newcommand{\floor}[1]{\left\lfloor #1 \right\rfloor}
+\newcommand{\ceil}[1]{\left\lceil #1 \right\rceil}
+
+\begin{filecontents}{references.bib}
+@misc{ed25519_site,
+  author = "Daniel J. Bernstein et al.",
+  title = "Ed25519: high-speed high-security signatures",
+  note = {\url{https://ed25519.cr.yp.to}},
+}
+@misc{BP+,
+  author = "Heewon Chung and Kyoohyung Han and Chanyang Ju and Myungsun Kim and Jae Hong Seo",
+  title = "Bulletproofs+: Shorter Proofs for Privacy-Enhanced Distributed Ledger",
+  year = "2020",
+  note = {\url{https://eprint.iacr.org/2020/735}}
+}
+@misc{Ped,
+  author = "Torben Pryds Pedersen",
+  title = "Non-Interactive and Information-Theoretic Secure Verifiable Secret Sharing",
+  pages = {129-–140},
+  year = "1992",
+  published = "Springer Berlin Heidelberg, Berlin, Heidelberg",
+  note = {\url{https://www.cs.cornell.edu/courses/cs754/2001fa/129.PDF}}
+}
+@misc{MRL0005,
+  author = "Shen  Noether and Adam  Mackenzie and  Monero  Core  Team",
+  title = "Ring  Confidential  Transactions,  MRL-0005",
+  year = "2016",
+  note = {\url{https://web.getmonero.org/resources/research-lab/pubs/MRL-0005.pdf}}
+}
+@misc{maxwell_ring_ct,
+  author = "Gregory Maxwell",
+  title = "Confidential Transactions",
+  year = "2015",
+  note = {\url{https://web.archive.org/web/20200502151159/https://people.xiph.org/~greg/confidential_values.txt} (Archived 2020-05-02)}
+}
+@misc{zano_wp,
+    author = "Andrey Sabelnikov",
+    title = "Zano whitepaper",
+    year = "2019",
+    note = {\url{https://zano.org/downloads/zano_wp.pdf}}
+}
+@misc{colored_coins,
+    author = "Rosenfeld, Meni",
+    title = "Overview of Colored Coins",
+    note = {\url{https://bitcoil.co.il/BitcoinX.pdf}},
+    year = "2012"
+}
+@misc{stealth_addr_peter_todd,
+    author = "Todd, Peter",
+    title = "Stealth addresses",
+    note = {\url{http://www.mailarchive.com/bitcoin-development@lists.sourceforge.net/msg03613.html}},
+    year = "2014"
+}
+@misc{cryptonote_whitepaper,
+  author = "van Saberhagen, Nicolas",
+  title = "CryptoNote v 2.0",
+  note = {\url{https://cryptonote.org/whitepaper.pdf}},
+  year = "2013"
+}
+@misc{zarcanum_wp,
+    author = "sowle and koe",
+    title = "Zarcanum: A Proof-of-Stake Scheme for Confidential Transactions with Hidden Amounts",
+    note = {\url{https://eprint.iacr.org/2021/1478.pdf}},
+    year = "2022"
+}
+@misc{conf_assets,
+    author = "Poelstra, Andrew and Back, Adam and Friedenbach, Mark and Maxwell, Gregory and Wuille, Pieter",
+    title = "Confidential Assets",
+    booktitle = "International Conference on Financial Cryptography and Data Security",
+    year = "2018",
+    publisher = "Springer Berlin Heidelberg",
+    pages = "43--63"
+}
+@misc{matrict,
+    author = "Muhammed F. Esgin and Raymond K. Zhao and Ron Steinfeld and Joseph K. Liu and Dongxi Liu",
+    title = "MatRiCT: Efficient, Scalable and Post-Quantum Blockchain Confidential Transactions Protocol",
+    note = {\url{https://eprint.iacr.org/2019/1287.pdf}},
+    year = "2019"
+}
+@misc{lelantus_cla,
+    author = "Pyrros Chaidos and Vladislav Gelfer",
+    title = "Lelantus-CLA",
+    note = {\url{https://eprint.iacr.org/2021/1036.pdf}},
+    year = "2021"
+}
+@misc{groth_how_to_leak_a_secret,
+    author = {Jens Groth and Markulf Kohlweiss},
+    title = {One-out-of-Many Proofs: Or How to Leak a Secret and Spend a Coin},
+    howpublished = {Cryptology ePrint Archive, Paper 2014/764},
+    year = {2014},
+    note = {\url{https://eprint.iacr.org/2014/764}},
+    url = {https://eprint.iacr.org/2014/764}
+}
+@misc{bootle_short_ring_sig,
+    author = {Jonathan Bootle and Andrea Cerulli and Pyrros Chaidos and Essam Ghadafi and Jens Groth and Christophe Petit},
+    title = {Short Accountable Ring Signatures Based on DDH},
+    howpublished = {Cryptology ePrint Archive, Paper 2015/643},
+    year = {2015},
+    note = {\url{https://eprint.iacr.org/2015/643}},
+    url = {https://eprint.iacr.org/2015/643}
+}
+@misc{bootle_groth_low_degree,
+    author = {Jonathan Bootle and Jens Groth},
+    title = {Efficient Batch Zero-Knowledge Arguments for Low Degree Polynomials},
+    howpublished = {Cryptology ePrint Archive, Paper 2018/045},
+    year = {2018},
+    note = {\url{https://eprint.iacr.org/2018/045}},
+    url = {https://eprint.iacr.org/2018/045}
+}
+@misc{zz2,
+    author = "",
+    title = "",
+    note = {\url{}},
+    year = ""
+}
+@misc{clsag,
+  author = "Brandon Goodell and Sarang Noether and Arthur Blue",
+  title = "Concise Linkable Ring Signatures and Forgery Against Adversarial Keys",
+  year = "2019",
+  note = {\url{https://eprint.iacr.org/2019/654.pdf}}
+},
+@misc{lsag_adhoc,
+  author = {Joseph K.  Liu and Victor K.  Wei and Duncan S.  Wong},
+  title = {Linkable Spontaneous Anonymous Group Signature for Ad Hoc Groups},
+  year = {2004},
+  note = {\url{https://eprint.iacr.org/2004/027}}
+},
+@misc{zarcanum,
+    author = {sowle and koe},
+    title = {Zarcanum: A Proof-of-Stake Scheme for Confidential Transactions with Hidden Amounts},
+    year = {2021},
+    note = {\url{https://eprint.iacr.org/2021/1478.pdf}}
+}
+@misc{dv_clsag,
+    author = {sowle},
+    title = {d/v-CLSAG: Extension for Concise Linkable Spontaneous Anonymous Group Signatures},
+    year = {2024},
+    note = {\url{https://hyle-team.github.io/docs/zano/dv-CLSAG-extension/dv-CLSAG-extension.pdf}}
+}
+\end{filecontents}
+\addbibresource{references.bib}
+
+
+
+\title{\huge{Zano: Confidential Assets Scheme for RingCT and Zarcanum}}
+
+
+\author{\large{sowle}\textsuperscript{1}, }
+\affil{\small{
+    \textsuperscript{1}Zano project, \texttt{val@zano.org}
+}}
+
+\date{\small{February 2024\footnote{Version 1.0. Last update: 2024-02-03.}}}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+    In this paper, we describe a practical way of implementing confidential assets (a.k.a. tokens or colored coins) in Zano with unlimited decoy mixing capability and hidden amounts as an extension to the Ring Confidential Transactions scheme. Our approach preserves public verifiability that no transaction creates or destroys coins. We further extend this approach to show how it can be combined with Zarcanum, a Proof-of-Stake scheme for transaction with hidden amounts.
+\end{abstract}
+
+
+\section{Introduction}
+The Zano project is heading towards a major privacy update, planned on March 2024. With this update and subsequent blockchain hard-fork all newly created transaction outputs will have hidden amounts, while it still be possible to stake them in a fully anonymous manner. At the same time, it will be possible to transfer multiple asset types within single transactions. In this paper we describe our approach, which is based on the concept of confidential assets with blinded assets tags originally proposed in \cite{conf_assets}. We show how we retain public verifiability that no assets are created or destroyed, while hiding both the output amounts and the output asset types.
+
+
+\section{Notation}
+Let $\mathbb{G}$ denote the main subgroup of the Ed25519 curve and let $\mathbb{Z}_p$ denote a ring of integers modulo $p$.
+
+Let $l$ be the order of $\mathbb{G}$: $l = \#\mathbb{G} = 2^{252} + 27742317777372353535851937790883648493$.
+
+For  any  set $X$, $x \stackrel{\$}{\leftarrow} X$ means uniform  sampling of $x$ at random from $X$. 
+
+$H_s$ is a scalar hash-function: $H_s:\{0,1\}^* \to \mathbb{Z}_l$
+
+$H_p$ is a deterministic hash function: $H_p:\{0,1\}^* \to \mathbb{G}$.
+
+$G, H, X, U \in 
+\mathbb{G}$ are fixed group generators with no efficiently-computable discrete logarithm relations selected uniformly at random (unless stated otherwise).
+
+\section{Confidential Assets construction}
+\subsection{Asset descriptor}
+Our approach is based on the concept of confidential assets with blinded assets tags originally proposed in \cite{conf_assets} and adapted in \cite{lelantus_cla}. Here we briefly describe the concept.
+
+In a normal confidential transaction each output's amount $a$ is committed to in amount commitment $A$ using additively homomorphic Pedersen commitment (see also \cite{Ped}):
+\[ A = aH + fG \]
+where $f \in \mathbb{Z}_l$ is a random blinding factor.
+
+The idea is to use a unique amount-bonded generator $H_t$\footnote{In \cite{conf_assets} such generators are called \textit{asset tags}. In this paper we use terms \textit{asset tag} and \textit{asset id} interchangeably.} for each asset $t$ instead of the generator $H$. So the amount $a$ for the asset $t$ is committed to in
+\[ A_t = a H_t + f G \]
+
+To publicly and unambiguously link an asset with the corresponding generator $H_t$, the latter is calculated as 
+\[  H_t = H_p(\textit{asset\_descriptor\_t})\] 
+where \textit{asset\_descriptor\_t} is data structure (\cref{fig:asset_descriptor}), containing the information associated with the given asset, such as unique name, ticker, emission parameters, etc. \textit{Asset descriptor} is explicitly put into the blockchain during the initial emission of an asset, so that blockchain observers can calculate corresponding asset tag $H_t$ and keep track of all existed asset types for further use.
+
+\begin{figure}[h!]
+    \centering
+    \includesvg[scale=0.9]{asset_descriptor}
+    \caption{Asset descriptor and asset operation data structures outline}
+    \label{fig:asset_descriptor}
+\end{figure}
+
+Note, that $\{H_t\}$ should have no efficient-computable discrete logarithm relations with themselves and other generators.
+
+For native Zano coins we use predefined asset tag $H_{native} = H$.
+
+
+\subsection{Hiding the real asset}
+Outputs' asset tags are necessary for verification. However, instead of disclosing asset tag $H_t$ for each output, we disclose the blinded asset tag $T$, because otherwise it would be possible for observers to learn the type of a corresponding asset from it.
+
+Blinded asset tag $T$ is calculated as
+\[ T = H_t + sX = H_p(\textit{asset\_descriptor\_t}) + sX \]
+where $s = H_s(...)$ is a pseudo-random mask, known only to the output's owner and the sender.
+
+%Consider slightly tweaked asset tag hiding scheme. Let $X \in \mathbb{G}$ be another generator, i.e. has no efficiently-computable discrete logarithm relation with both $H$ and $G$. Then a typical transaction output would be represented by a tuple (hereinafter we omit output stealth address, encoded amount and other data for simplicity): $   ( \sigma^{rp}, T, A = aT + fG )$ where $T = H_t + rX = H_p(\textit{asset\_descriptor\_t}) + rX $ is blinded asset tag, $r = H_s(...)$ is a pseudo-random mask, known only to the output's owner and the sender, and $\sigma^{rp}$ is a range proof for the fact, that $a < 2^{64}$.
+
+\subsection{Transaction structure}
+
+The structure of a typical transaction with confidential assets support is shown on \cref{fig:ZC+bare}. It has $m$ inputs, each referring to a ring of size $n$, and $k$ outputs. The index of a real output is denoted by $\pi \in [0, n)$ (assuming, it's distinct for each input).
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[scale=0.640]{ZC_and_bare_inputs}
+    \caption{Transaction with Confidential Assets, employing both ZC inputs and old bare inputs}
+    \label{fig:ZC+bare}
+\end{figure}
+
+Note, that each transaction's input can be either one of two possible types: 1) new \textit{ZC}-input\footnote{ZC signature stands for Zarcanum-aware CLSAG signature. The same acronim is used for corresponding inputs and outputs.} with hidden amount and asset type, or 2) old so-called \textit{bare input} with explicit amount and no asset support, as used in the original CryptoNote protocol \cite{cryptonote_whitepaper}. ZC-inputs can only refer to ZC-outputs in their rings, and bare inputs can only refer to old CryptoNote-style outputs with explicit amounts. While each bare input requires an NLSAG signature, as in original CryptoNote, each ZC-input requires \nicefrac{d}{v}-CLSAG\footnote{\nicefrac{d}{v}-CLSAG is the CLSAG\cite{clsag} extension described in \cite{dv_clsag}.} signature.
+
+Public verifiability that no assets are created or destroyed, while hiding both the output amounts and the output asset types, is retained with the combination of balance proof, range proofs and asset tags surjection proof which will be discussed below.
+
+\subsection{Ring signature construction}
+For ZC-inputs we use RingCT approach (\cite{maxwell_ring_ct}, \cite{MRL0005}) of using pseudo output commitment to implement simple balance proof, while hiding the commitment of the real output. In addition to pseudo output amount commitment $A_i^P = a_i T_\pi^i + f_i' G$ we use pseudo output blinded asset tag $T_i^P = T_\pi^i + r'_i X$, where $f'_i, r'_i$ are pseudo-random blinding masks.
+
+To prove that $T^P$ corresponds to ring asset tag $T_\pi$ with the same index $\pi$ as stealth address $P_\pi$ and amount commitment $A_\pi$ we use additional layer of the ring signature:
+\[
+    T_\pi - T^P = -r' X
+\]
+For the ring signature itself we use $\nicefrac{d}{v}$-CLSAG (\cite{dv_clsag}) instead of standard $d$-CLSAG signature, because this additional layer employs different group generator ($X$). Namely, we use $\nicefrac{3}{2}$-CLSAG: two generators ($G, X$) in a 3-layer arrangement $(G, G, X)$.
+
+\subsection{Asset registration, emission and public burning}
+All asset operations are done by sending a transaction with \textit{asset operation} (\cref{fig:asset_descriptor}) data structure in its extra section. Registered asset can be controlled by \textit{master asset secret control key}, and all operations, except the registration, require the asset operation structure to be signed by asset control key. Blockchain observers then can verify this.
+
+To emit an asset one fills the mentioned data structures in transaction's extra to disclose emission amount $a_e$, secretly calculates blinding mask $f_e = H_s(domain\_sep, mck, R)$, where $mck$ is the secret control key, and calculates corresponding amount commitment:
+\[
+    A^e = a_e H_e + f_e G
+\]
+To complete asset emitting transaction, one or several outputs with blinded asset id corresponding to $H_e$ and with the total amount of $a_e$ should be added.
+
+Similarly, to publicly burn $a_b$ amount of an asset with tag $H_b$, one does the same calculations:
+\[
+    A^b = a_b H_b + f_b G
+\]
+Unlike the emission of an asset, for public burn operation to be balanced, one or several inputs, corresponding to asset tag $H_b$ and with the total amount of $a_b$, should be added.
+
+Asset registration operation can at the same time fully or partially emit the supply of the asset. 
+
+\subsection{Balance proof}
+For each distinct asset $t$ corresponding amounts in inputs and outputs should be balanced:
+\begin{equation}\label{eq:bal_t}
+    \sum_{i: H_i = H_t}{a_i} = \sum_{i:H_{h(i)}=H_t}{e_i}
+\end{equation}
+where mapping $h: [0, k) \rightarrow [0, m)$ maps indices of asset tags in outputs to indices of corresponding asset tags in inputs.
+
+Similarly, amounts of native coins should be balanced, including the transaction fee\footnote{Here we assume that the transaction fee can only be paid in native coins, and its value is explicitly stated in transaction's extra.} and bare inputs:
+\begin{equation}\label{eq:bal_n}
+    \sum_{i: H_i = H}{a_i} + \sum_{j}{b_j} = \sum_{i:H_{h(i)}=H}{e_i} + fee
+\end{equation}    
+
+Thanks to homomorphism we can combine balance equations \eqref{eq:bal_t} and \eqref{eq:bal_n} into one using corresponding commitments:
+\begin{equation}
+    \Big(\sum_j{b_j} - fee\Big) \cdot H + \sum_{i=0}^{m-1}{A^P_i} - \sum_{j=0}^{k-1}{E_j} = sX
+\end{equation}
+
+To bring the balance equation to the most general form we need to include amount commitments for asset emission ($A^e$) or for asset burning ($A^b$)\footnote{We assume that only one asset operation can be put into a transaction, hence either $A^e$ or $A^b$ may present in this equation, but not both.}:
+\begin{equation}\label{eq:A_main_sum}
+    \Big(\sum_j{b_j} - fee\Big) \cdot H + \sum_{i=0}^{m-1}{A^P_i} + A^e - A^b - \sum_{j=0}^{k-1}{E_j} = sX
+\end{equation}
+Observers make sure that the equation above holds for some secret $s$ using a Schnorr proof.
+Blinding masks $s_j$ and $y_j$ in outputs are calculated using a shared secret\footnote{Namely, as $H_s(domain\_sep, H_s(8vR, i))$, where $domain\_sep$ is domain separation constant, $v$ is recipient's secret view key, $R$ is transaction public key, and $i$ is output's index.} so output's receiver is able to reconstruct them.
+
+To zero $G$-component in the left part of \cref{eq:A_main_sum} we adjust one of blinding masks of pseudo output amount commitment, $f'_j$.
+
+
+\subsection{Asset tags surjection proof}
+Blinded asset tags $T'_j$ in outputs have to be restricted by additional proof to prevent malicious use. For that purpose we use asset surjection proof scheme from \cite{conf_assets}, later improved in \cite{lelantus_cla} with the help of logarithmic membership proof by Groth, Bootle at al. \cite{groth_how_to_leak_a_secret}\cite{bootle_short_ring_sig}\cite{bootle_groth_low_degree}. We also use the optimization, proposed in Section 1.3 in \cite{matrict}.
+
+Given the set of pseudo output asset tags $\{T^p_i\}, \; i = 0 \dots m-1$ we prove that each output's asset tag $\{T'_j\}, \; j = 0\dots k-1$ corresponds to one of them, i.e. we prove knowing a DL secret $x$ with respect to $X$ for one of a public key in the set $\{T^p_i - T'_j\}$:
+\[ T^p_i - T'_j = xX \] (where $m$ is the number of inputs and $k$ is the number of outputs).
+
+According to \cite{bootle_groth_low_degree}, communication costs can be estimated as $4.1 \sqrt{k \log m}$ group elements and the same amount of field elements. Number of group exponentiations on verification is $O(\sqrt{k} \log{km})$ 
+
+In contrast, using the simplest case of non-aggregated ring signature would require $km + 1$ field elements ($k$ ring signatures, each having a ring of size $m$ and a shared Fiat-Shamir challenge).
+
+\subsection{Range proof aggregation}
+Using different generators $T'_j$ for each output commitment requires additional steps to aggregate range proofs (otherwise we would need to use single range proof for each output which is very consuming). For each output commitment $E_j = e_j T'_j + y_j G$ we provide additional commitment to the same amount $E'_j = e_jU + y'_jG$ (where $U \in \mathbb{G}$ is another fixed generator with no efficiently-computable discrete logarithm relation with others), and a vector Schnorr proof of knowing DL $e_j, y''$ in
+\[ E_j + E'_j = e_j (T'_j + U) + y'' G\] which in total would require 1 group element $E'_j$ and 2 scalars per output, and one scalar for a shared Fiat-Shamir challenge and one aggregated range proof for all outputs.
+
+\subsection{Transactions with no ZC inputs and implications}
+
+Let's consider an important\footnote{In Zano ZC outputs are allowed only after Zarcanum hardfork, hence at the very moment of the hardfork there won't be a single ZC output in the blockchain.} case when a transaction has only $m$ bare inputs and zero ZC inputs.
+
+In such a case there's no reason to hide real asset id in outputs using a non-zero blinding mask $s_j$, because it's obvious that all of them are $H_{native} = H$. Thus, $s_j = 0$ and the balance equation has zero $X$ component.
+
+Also, in the absence of ZC inputs we cannot zero $G$ component by adjusting pseudo output amount blinding mask $f'_j$. This also means, that we cannot do any asset operation within such a transaction.
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[scale=0.64]{bare_inputs_only}
+    \caption{Transaction with Confidential Assets, employing only CryptoNote-style bare inputs with explicit amounts}
+    \label{fig:bare_inputs_only}
+\end{figure}
+
+Considering all of mentioned above, we finally got simplified balance proof equation: 
+\begin{equation}\label{eq:A_main_sum}
+    \Big(\sum_j{b_j} - fee\Big) \cdot H - \sum_{j=0}^{k-1}{E_j} = x_gG
+\end{equation}
+
+As in the previous case, observers make sure that the equation above holds for some secret $x_g$ using a Schnorr proof.
+Blinding masks $y_j$ in outputs are calculated using a shared secret\footnote{Namely, as $H_s(domain\_sep, H_s(8vR, i))$, where $domain\_sep$ is domain separation constant, $v$ is recipient's secret view key, $R$ is transaction public key, and $i$ is output's index.} so output's receiver is able to reconstruct them.
+
+Note, that such a transaction generates ZC outputs with explicit asset id. If another transaction will spend only such outputs with explicit native coins asset id (with or without any bare inputs) it will mean that all outputs of such a transaction have native coin asset id as well. We detect such scenarios and enforce using explicit asset id for such obvious outputs with consensus-level rules, because we believe that eventually it will help improving the privacy.
+
+
+\subsection{Zarcanum Proof-of-Stake mining transaction}
+
+In this section we discuss how Zarcanum Proof-of-Stake scheme for confidential transactions, suggested in \cite{zarcanum_wp}, can be implemented for transactions with confidential assets. \cref{fig:zarcanum_only} shows the simplest Zarcanum transaction, supporting Confidential Assets. We assume that only native coins can be staked to mine a PoS block. 
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[scale=0.64]{Zarcanum_only}
+    \caption{The simplest Zarcanum PoS mining transaction with Confidential Assets support}
+    \label{fig:zarcanum_only}
+\end{figure}
+
+Let us recall Zarcanum's main concept. A staker periodically checks all his unspent outputs in the wallet against PoS win condition. Once it satisfied, staker has an opportunity to create a PoS block, sign its miner transaction with Zarcanum signature, broadcast it and receive the block reward. 
+
+Zarcanum signature requires adding two additional layers to the ring signature:
+\begin{enumerate}
+    \item a proof of knowing the DL of $C - A_\pi - Q_\pi$ with respect to $X$;
+    \item a proof of knowing the DL of $Q_\pi$ with respect to $G$;
+\end{enumerate}
+where $C$ is specially constructed extended amount commitment (please, refer to Zarcanum whitepaper \cite{zarcanum_wp} for more details). Here we effectively have 5-layer $(G, G, X, X, G)$ arrangement for the ring signature, while only two distinct generators are used. Thus, it's reasonable to employ $\nicefrac{d}{v}$-CLSAG signature, namely, $\nicefrac{5}{2}$-CLSAG (\cite{dv_clsag}). 
+
+Additional group element $Q$, which is calculated for each ZC output, is necessary to preserve sender-receiver anonymity in Zarcanum.
+
+Note, that all outputs of the transaction on \cref{fig:zarcanum_only} have explicit asset id, because there's no other inputs and staking is only allowed for native coins. Using such PoS miner transactions may negatively impact blockchain anonymity, because it spends a stake output with a possibly non-explicit asset id ($r_0 \neq 0$), but instead creates one or several outputs with explicit asset id. This problem can be solved by adding an arbitrary ZC-input with non-explicit asset id to PoS mining transaction, as shown on \cref{fig:zarcanum_and_ZC}.
+
+\begin{figure}[ht!]
+    \centering
+    \includesvg[scale=0.64]{Zarcanum_and_ZC}
+    \caption{Zarcanum PoS mining transaction with Confidential Assets support and improved anonymity. Note that $r_1 \neq 0$}
+    \label{fig:zarcanum_and_ZC}
+\end{figure}
+
+Note, that balance proof for such PoS miner transactions should take block reward into account, which is a trivial modification, because reward is public knowledge and nominated in native coins only.
+
+
+\section{Possible attack vector and mitigation}
+Asset tag concept is sensitive to cryptographic properties of the deterministic hash function $H_p$. Namely, we need to ensure that there's no efficiently-computable way to solve the following problem A:\\
+
+\textit{Problem A: Let $H_t = H_p(T_0)$. Given $H_t$ and $T_0$ find $x, y$ such that:
+\[ H_p(x) = y H_p(T_0) = y H_t \] }
+
+Otherwise one would be able to generate arbitrary amount of assets while still keeping Eq. \ref{eq:A_main_sum} hold.
+
+The complexity of brute force attacks (including MITM) can possibly be increased by using computational-expensive hash function $H_e$ to calculate asset-specific generator $H_t$:
+\[ H_t = H_p(H_e(\textit{asset\_descriptor\_t}))\]
+because normally the calculation of $H_t$ is a rare operation and its result can be cached. 
+
+\section{Efficiency}
+
+Let's try to estimate size of the all signatures and proofs for a transaction with $m$ inputs (each having $n$ elements in its ring) and $k$ outputs.
+
+{
+\renewcommand{\arraystretch}{1.37}
+%\noindent %\setlength\tabcolsep{0.5pt}
+\begin{table}[!h]
+  \small
+  \centering
+    \begin{tabularx} %{0.9\textwidth} {|l|l|l|@{}}
+    {45em}{ @{} X | X | X @{} }
+        \hline
+        Parameter & $\mathbb{G}$ & $\mathbb{Z}_l$ \\
+        \hline
+        Inputs (key images) & $m$ &  \\
+        %Inputs (decoy references) & $\approx 3mn$ bytes & $\approx 3mn$ bytes \\
+        Pseudo output commitments & $2m$ &  \\
+        %\hline
+        Ring signature (CLSAG) & & $(n+1)m$ \footnotemark   \\
+        %\hline
+        Outputs' range proofs (BP+) & $k + [(2 \cdot \ceil{\log_2(64) + \log_2(1)} + 3) ]$ & 2k + 4 \\
+        %\hline
+        Outputs' additional proofs & & $ $(km + 1) \footnotemark  \\ 
+        Outputs data (except proofs) & $3k$ & $k$ \\ \hline
+        Total & $3m+4k+15$ & $(n+k+1)m+3k+5$  \\
+        \hline
+    \end{tabularx}
+    \caption{\label{tab:size_comparison}Size comparison. $\mathbb{G}$ means the number of group elements, $\mathbb{Z}_p$ means the number
+of field elements.}
+\end{table}
+}
+\vspace{10pt}
+
+\addtocounter{footnote}{-1}
+\footnotetext{CLSAG compresses all additional layers.}
+\addtocounter{footnote}{1}
+%\footnotetext{One aggregated Bulletproofs+ proof with double-blinded commitments}
+%\addtocounter{footnote}{1}
+\footnotetext{A ring signature for each output.}
+\addtocounter{footnote}{1}
+%\footnotetext{2-generators Schnorr proofs for each output with shared Fiat-Shamir challenge.}
+
+
+\printbibliography
+
+\end{document}
