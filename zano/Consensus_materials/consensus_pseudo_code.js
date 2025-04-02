@@ -256,6 +256,15 @@ function is_in_hardfork_6_zone()
 }
 
 
+//this function calculate the lengh of subchains from split point and to the last block in every subchain(A and B) and return minimal lengh 
+function get_split_depth(main_chain, altchain, connection_point_height)
+{
+  var mainchain_subchain_len = main_chain.length - connection_point_height;
+  var maltchain_subchain_len = altchain.length - connection_point_height;
+  return mainchain_subchain_len > maltchain_subchain_len ? maltchain_subchain_len:mainchain_subchain_len;
+}
+
+
 /**
  * is_reorganize_required is a key function, basically it define consensus algorithm by introducing bunch of rules on how subchains are chosen  
  * 
@@ -266,6 +275,9 @@ function is_in_hardfork_6_zone()
  
 * @param {*} connection_point_height - last common block between main and alt chains
  */
+
+const POS_PRIORITY_PERIOD = 50; //this constat is subject for consideration, could be between 20 to 100
+
 function is_reorganize_required(main_chain, alt_chain, connection_point_height)
 {
 
@@ -296,6 +308,33 @@ function is_reorganize_required(main_chain, alt_chain, connection_point_height)
 
   if(is_in_hardfork_6_zone())
   {
+    if(get_split_depth(main_chain, alt_chain, connection_point_height) > POS_PRIORITY_PERIOD)
+    {
+      //if the split is happenes during short period of time let's prioritize PoS block to prevent "Balancing attack"
+      if(CD_A.CD_POS > CD_B.CD_POS)
+      {
+        return false;
+      }
+      else if(CD_A.CD_POS < CD_B.CD_POS)
+      {
+        return true;
+      }else{
+        //in case of cumulative work of PoS is equal we can rely on PoW
+        if(CD_A.CD_POW > CD_B.CD_POW)
+        {
+          return false;
+        }
+        else if(CD_A.CD_POS < CD_B.CD_POS)
+        {
+          return true;
+        }else
+        {
+          //this can happen if the altchain is just 1 block lenght
+          return select_forks_with_equal_work(main_chain, alt_chain);
+        }
+      }
+    }
+    
     alt = get_a_to_b_relative_cumulative_difficulty_hard_fork6(difficulty_pos_at_split_point, difficulty_pow_at_split_point, CD_B, CD_A);
     main = get_a_to_b_relative_cumulative_difficulty_hard_fork6(difficulty_pos_at_split_point, difficulty_pow_at_split_point, CD_A, CD_B);  
   }else
@@ -311,6 +350,13 @@ function is_reorganize_required(main_chain, alt_chain, connection_point_height)
   else
   {
     //this can happen if the altchain is just 1 block lenght
+    return select_forks_with_equal_work(main_chain, alt_chain);
+  }
+}
+
+function select_forks_with_equal_work(main_chain, alt_chain)
+{
+      //this can happen if the altchain is just 1 block lenght
     
     //because we burn fees, we prefer blocks with more summary fee, to motivate stakers include transactions
 
@@ -320,8 +366,8 @@ function is_reorganize_required(main_chain, alt_chain, connection_point_height)
     }else if (alt_chain[alt_chain.length -1].total_fees < main_chain[main_chain.length - 1].total_fees)
     {
       return false;
-    }else{
-
+    }else
+    {
       if (!main_chain[main_chain.length - 1].is_pos)
         return false; // do not reorganize on the same cummul diff if it's a PoW block
   
@@ -334,7 +380,6 @@ function is_reorganize_required(main_chain, alt_chain, connection_point_height)
   
       return true;
     }
-  }
 }
 
 /***********************************************************************
