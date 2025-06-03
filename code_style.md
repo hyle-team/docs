@@ -6,7 +6,6 @@ Basis for our code-style is a book **“C++ Coding Standards” by Herb Sutter a
 
 ### C++ version
  - We use a subset of C++17 features.
- - Each new C++ feature, that hasn't been used before in the code should be introduced for a reason and its usage should be approved by the tech leads.
 
 ### Formatting (religion)
  - Use spaces for indentation: 2 spaces = one tab. Don't use tab character.
